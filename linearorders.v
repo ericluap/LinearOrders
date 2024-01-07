@@ -33,6 +33,13 @@ induction hbc as [| b' hb'c].
   apply le_S. exact IHhb'c.
 Qed.
 
+Theorem nat_nlt_succ (x : nat) : ~(S x < x)%nat.
+Proof.
+unfold not. intros. induction x.
+- inversion H.
+- apply le_S_n in H. exact (IHx H).
+Qed.
+
 Theorem nat_lt_irreflexive : irreflexive Peano.lt.
 Proof.
 unfold Peano.lt. unfold irreflexive.
@@ -104,6 +111,35 @@ mkLinearOrder
 
 (* omega_star is the natural numbers with the reverse ordering *)
 Definition omega_star : LinearOrder := reverse omega.
+
+Definition is_minimum {X : LinearOrder} (x : X) := forall y : X, x < y \/ x = y.
+Definition has_minimum (X : LinearOrder) := exists x : X, is_minimum x.
+
+Definition is_maximum {X : LinearOrder} (x : X) := forall y : X, y < x \/ y = x.
+Definition has_maximum (X : LinearOrder) := exists x : X, is_maximum x.
+
+Theorem zero_is_minimum : is_minimum (0 : omega).
+Proof.
+unfold is_minimum. intros. induction y.
+- right. trivial.
+- destruct IHy.
+  --  apply le_S in H. left. assumption.
+  --  left. assert (0 <= y). rewrite H. trivial. apply le_n_S in H0. assumption.
+Qed.
+
+Theorem omega_has_minimum : has_minimum omega.
+Proof.
+unfold has_minimum. unfold is_minimum. exists 0. exact (zero_is_minimum).
+Qed.
+
+Theorem omega_no_maximum : ~ has_maximum omega.
+Proof.
+unfold has_maximum. unfold not. intros. destruct H.
+unfold is_maximum in H. assert (S x < x \/ S x = x)%nat. exact (H (S x)). 
+destruct H0.
+- exact (nat_nlt_succ x H0).
+- apply (n_Sn x). symmetry. exact H0.
+Qed.
 
 (* Define what a (non-convex) embedding between linear orders is *)
 Structure Embedding (X Y : LinearOrder) : Type := mkEmbedding
@@ -186,6 +222,6 @@ mkLinearOrder
   (sum_lt_irreflexive X Y) 
   (sum_lt_total X Y).
 
-Notation "X + Y" := (sum X Y).
+
 
 
