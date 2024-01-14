@@ -1,3 +1,6 @@
+Require Import Classical.
+Require Import Wf_nat.
+
 (* Basic properties of relations *)
 Definition relation (X : Type) := X -> X -> Prop.
 
@@ -23,6 +26,18 @@ lt_total : total lt;
 }.
 
 Notation "x < y" := (lt _ x y).
+
+Theorem lt_not_eq : forall X : LinearOrder, forall a b : X, a < b -> a <> b.
+Proof.
+intros. unfold not. intros. rewrite H0 in H. exact ((X.(lt_irreflexive) b) H).
+Qed.
+
+Theorem lt_not_gt : forall X : LinearOrder, forall a b : X, a < b -> ~(b < a).
+Proof.
+unfold not. intros. assert (a < a). { exact (X.(lt_transitive) a b a H H0). }
+assert (~a<a). { exact (X.(lt_irreflexive) a). }
+contradiction.
+Qed.
 
 (* Proving that < on the natural numbers satisfies the properties of a linear order *)
 Theorem nat_lt_transitive : transitive Peano.lt.
@@ -127,6 +142,15 @@ unfold is_minimum. intros. induction y.
   --  left. assert (0 <= y). rewrite H. trivial. apply le_n_S in H0. assumption.
 Qed.
 
+Theorem not_lt_zero : forall a : omega, ~(a < 0).
+Proof.
+unfold not. intros.
+assert ((0 : omega) < a \/ 0 = a). { exact (zero_is_minimum a). }
+destruct H0.
+- exact (lt_not_gt _ _ _ H H0).
+- symmetry in H0. exact (lt_not_eq _ _ _ H H0).
+Qed.
+
 Theorem omega_has_minimum : has_minimum omega.
 Proof.
 unfold has_minimum. unfold is_minimum. exists 0. exact (zero_is_minimum).
@@ -144,10 +168,125 @@ Qed.
 (* Define what a (non-convex) embedding between linear orders is *)
 Structure Embedding (X Y : LinearOrder) : Type := mkEmbedding
 {
-f : X -> Y;
-order_preserving : forall a b : X, a < b -> f a < f b
+map :> X -> Y;
+order_preserving : forall a b : X, a < b -> map a < map b
 }.
 
+Theorem order_preserving_backwards : 
+forall (X Y : LinearOrder), 
+forall (f : Embedding X Y),
+forall (a b : X), f a < f b -> a < b.
+Proof.
+intros. assert (a < b \/ a = b \/ b < a).
+{ exact (X.(lt_total) a b). }
+destruct H0.
+- assumption.
+- destruct H0.
+  -- assert (f a <> f b). { exact (lt_not_eq Y (f a) (f b) H). }
+     assert (f a = f b). { rewrite H0. reflexivity. }
+     contradiction.
+  -- assert (f b < f a). { exact (order_preserving _ _ _ b a H0). }
+     assert (~ f b < f a). { exact (lt_not_gt Y (f a) (f b) H). }
+     contradiction.
+Qed.
+
+Theorem order_preserving_injective :
+forall (X Y : LinearOrder), 
+forall (f : Embedding X Y),
+forall (a b : X), f a = f b -> a = b.
+Proof.
+intros. assert (a < b \/ a = b \/ b < a). { exact (X.(lt_total) a b). }
+destruct H0.
+- assert (f a < f b). { exact (order_preserving _ _ _ a b H0). }
+  assert (f a <> f b). { exact (lt_not_eq _ _ _ H1). }
+  contradiction.
+- destruct H0.
+  -- assumption.
+  -- assert (f b < f a). { exact (order_preserving _ _ _ b a H0). }
+     assert (f b <> f a). { exact (lt_not_eq _ _ _ H1). }
+     assert (f a <> f b). { unfold not. intros. symmetry in H3. contradiction. }
+     contradiction.
+Qed.
+
+Structure Suborder (Y : LinearOrder) : Type := mkSuborder
+{
+X :> LinearOrder;
+embedding : Embedding X Y;
+}.
+
+Definition Image {X Y : Type} (f : X -> Y) := {y : Y | exists x : X, f x = y}.
+
+Theorem same_proj1 : forall A : Type, forall P : A -> Prop,
+forall (a b : {n : A | P n}), proj1_sig a = proj1_sig b -> a = b.
+Proof.
+intros. destruct a. destruct b. simpl in H.
+subst. f_equal. apply proof_irrelevance.
+Qed.
+
+Definition well_order (X : LinearOrder) :=
+forall A : Suborder X, (A -> has_minimum A).
+
+Theorem zero_in_image_least : 
+forall A : Suborder omega, (exists a : A, embedding omega A a = 0) -> has_minimum A.
+Proof.
+intros. destruct H. unfold has_minimum. exists x. unfold is_minimum. intros.
+assert (embedding _ _ x < embedding _ _ y \/ embedding _ _ x = embedding _ _ y).
+{ rewrite H. exact (zero_is_minimum (embedding _ _ y)). }
+destruct H0.
+- left. exact (order_preserving_backwards _ _ _ _ _ H0).
+- right. exact (order_preserving_injective _ _ _ _ _ H0).
+Qed.
+
+Theorem less_than_1_is_0 : forall n : nat, (n < 1)%nat -> n = 0.
+Proof.
+intros. destruct n.
+- trivial.
+- unfold Peano.lt in H. apply le_S_n in H. contradiction (not_lt_zero _ H).
+Qed.
+
+Theorem prev_not_in_image_least :
+forall A : Suborder omega,
+(exists a : A, 
+forall x : omega, x < embedding _ _ a -> forall b : A, embedding _ _ b <> x) ->
+has_minimum A.
+Proof. 
+intros. destruct H. unfold has_minimum. exists x. unfold is_minimum.
+intros. assert (x < y \/ x = y \/ y < x). { exact (A.(lt_total) x y). }
+destruct H0.
+- left. assumption.
+- destruct H0.
+* right. assumption.
+* left. assert (embedding _ _ y < embedding _ _ x). 
+{ exact (order_preserving  _ _ _ _ _ H0) . }
+assert (embedding _ _ y <> embedding _ _ y). { exact (H (embedding _ _ y) H1 y). }
+contradiction.
+Qed.
+
+Theorem omega_well_order : well_order omega.
+Proof.
+destruct (classic (well_order omega)).
+- assumption.
+- unfold well_order in H. apply not_all_ex_not in H.
+destruct H.
+assert (forall n : omega, ~(exists a : x, embedding omega x a = n)).
+{ intros.
+ induction n using (well_founded_induction lt_wf).
+destruct (classic (exists a : x, embedding omega x a = n)).
+{ destruct H1. 
+assert (exists a : x, 
+forall z : omega, z < embedding _ _ a -> forall b : x, embedding _ _ b <> z).
+{ exists x0. intros. subst. specialize (H0 z H2) as H3. firstorder. }
+specialize (prev_not_in_image_least _ H2) as H3.
+assert (x -> has_minimum x). { intros. assumption. }
+contradiction (H H4). }
+assumption. }
+assert (x -> has_minimum x). 
+{ intros. specialize (H0 (embedding _ _ X0)) as H1. unfold not in H1.
+assert (exists a : x, embedding omega x a = embedding omega x X0).
+{ exists X0. reflexivity. }
+contradiction. }
+contradiction.
+Qed.
 
 (* Given a linear order on the set A and on the set B, 
   Sum A B is set on which their sum is defined *)
