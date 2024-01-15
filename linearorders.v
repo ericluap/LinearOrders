@@ -1,6 +1,7 @@
 Require Import Classical.
 Require Import Wf_nat.
 Require Import FunctionalExtensionality.
+Require Import Description.
 
 (* Basic properties of relations *)
 Definition relation (X : Type) := X -> X -> Prop.
@@ -28,6 +29,7 @@ lt_total : total lt;
 
 Notation "x < y" := (lt _ x y).
 
+(* Basic properties of linear orders *)
 Theorem lt_not_eq : forall X : LinearOrder, forall a b : X, a < b -> a <> b.
 Proof.
 intros. unfold not. intros. rewrite H0 in H. exact ((X.(lt_irreflexive) b) H).
@@ -128,12 +130,14 @@ mkLinearOrder
 (* omega_star is the natural numbers with the reverse ordering *)
 Definition omega_star : LinearOrder := reverse omega.
 
+(* Defining minimum and maximum for linear orders *)
 Definition is_minimum {X : LinearOrder} (x : X) := forall y : X, x < y \/ x = y.
 Definition has_minimum (X : LinearOrder) := exists x : X, is_minimum x.
 
 Definition is_maximum {X : LinearOrder} (x : X) := forall y : X, y < x \/ y = x.
 Definition has_maximum (X : LinearOrder) := exists x : X, is_maximum x.
 
+(* Proving that properties about minimums and maximums for omega *)
 Theorem zero_is_minimum : is_minimum (0 : omega).
 Proof.
 unfold is_minimum. intros. induction y.
@@ -173,6 +177,37 @@ map :> X -> Y;
 order_preserving : forall a b : X, a < b -> map a < map b
 }.
 
+Definition embedding_embedding_map {X Y Z: LinearOrder} (f : Embedding X Y) (g : Embedding Y Z)
+: X -> Z := fun x : X => g (f x).
+
+Theorem embedding_embedding_map_order_preserving {X Y Z: LinearOrder} (f : Embedding X Y) (g : Embedding Y Z)
+: forall a b : X, a < b -> embedding_embedding_map f g a < embedding_embedding_map f g b.
+Proof.
+intros. unfold embedding_embedding_map. 
+exact (order_preserving Y Z g _ _ (order_preserving X Y f a b H)).
+Qed.
+
+Definition embedding_embedding {X Y Z : LinearOrder} (f : Embedding X Y) (g : Embedding Y Z) 
+: Embedding X Z := {|
+  map := embedding_embedding_map f g;
+  order_preserving := embedding_embedding_map_order_preserving f g;
+|}.
+
+(* Definition of the identity embedding *)
+Definition id_embedding_map (X : LinearOrder) := fun x : X => x.
+
+Theorem id_embedding_map_order_preserving (X : LinearOrder) : 
+forall a b : X, a < b -> id_embedding_map _ a < id_embedding_map _ b.
+Proof.
+intros. unfold id_embedding_map. assumption.
+Qed.
+
+Definition id_embedding (X : LinearOrder) : Embedding X X :=
+{|
+  map := id_embedding_map X;
+  order_preserving := id_embedding_map_order_preserving X;
+|}.
+
 (* Properties of order preserving maps *)
 Theorem order_preserving_backwards : 
 forall (X Y : LinearOrder), 
@@ -210,36 +245,28 @@ destruct H0.
      contradiction.
 Qed.
 
+(* Definition of a suborder of a linear order *)
 Structure Suborder (Y : LinearOrder) : Type := mkSuborder
 {
 actual_order :> LinearOrder;
 embedding : Embedding actual_order Y;
 }.
 
-Definition suborder_suborder_map (X : LinearOrder) (Y : Suborder X) (Z : Suborder Y) : Z -> X :=
-fun z : Z => embedding X Y (embedding Y Z z).
-
-Theorem suborder_suborder_map_order_preserving (X : LinearOrder) (Y : Suborder X) (Z : Suborder Y) :
-forall a b : Z, a < b -> suborder_suborder_map _ _ _ a < suborder_suborder_map _ _ _ b.
-Proof.
-intros. specialize (order_preserving Z Y (embedding Y Z) a b H) as H1.
-exact (order_preserving Y X (embedding X Y) (embedding Y Z a) (embedding Y Z b) H1).
-Qed.
-
-Definition suborder_suborder_embedding (X : LinearOrder) (Y : Suborder X) (Z : Suborder Y) : Embedding Z X :=
+(* Every linear order is a suborder of itself *)
+Definition id_suborder (X : LinearOrder) : Suborder X :=
 {|
-  map := suborder_suborder_map X Y Z;
-  order_preserving := suborder_suborder_map_order_preserving X Y Z;
+  actual_order := X;
+  embedding := id_embedding X;
 |}.
 
 Definition suborder_suborder (X : LinearOrder) (Y : Suborder X) (Z : Suborder Y) : Suborder X :=
 {|
   actual_order := Z;
-  embedding := suborder_suborder_embedding X Y Z;
+  embedding := embedding_embedding Z.(embedding _) Y.(embedding _);
 |}.
 
 Definition Image {X Y : Type} (f : X -> Y) := {y : Y | exists x : X, f x = y}.
-
+ 
 Theorem same_proj1 : forall A : Type, forall P : A -> Prop,
 forall (a b : {n : A | P n}), proj1_sig a = proj1_sig b -> a = b.
 Proof.
@@ -247,9 +274,11 @@ intros. destruct a. destruct b. simpl in H.
 subst. f_equal. apply proof_irrelevance.
 Qed.
 
+(* Defintion of a well order *)
 Definition well_order (X : LinearOrder) :=
 forall A : Suborder X, (A -> has_minimum A).
 
+(* Proving that every suborder of a well order is well ordered *)
 Theorem suborder_of_well_order : 
 forall Y : LinearOrder, forall X : Suborder Y, well_order Y -> well_order X.
 Proof.
@@ -321,6 +350,7 @@ contradiction. }
 contradiction.
 Qed.
 
+(* Every suborder of omega is a well order *)
 Theorem suborder_omega_well_order : forall X : Suborder omega, well_order X.
 Proof.
 intros. exact (suborder_of_well_order omega X omega_well_order).
@@ -399,6 +429,7 @@ mkLinearOrder
   (sum_lt_irreflexive X Y) 
   (sum_lt_total X Y).
 
+(* Given a linear order X and property P, construct the suborder of X that satisfies P *)
 Definition pred_order_relation (X : LinearOrder) (P : X -> Prop) : relation {x : X | P x} :=
 fun a b : {x : X | P x} => proj1_sig a < proj1_sig b.
 
@@ -461,7 +492,7 @@ Definition subset_pred_order (X : LinearOrder) (P : X -> Prop) : Suborder X :=
 
 Notation "{ x : A , P }" := (subset_pred_order A (fun x => P)) (x at level 99) : type_scope.
 
-
+(* Defining the product of linear orders as indexed by a well order *)
 Definition product_set {index : LinearOrder} (map : index -> LinearOrder) := 
 forall (i : index), (map i).
 
@@ -552,6 +583,7 @@ Definition product (index : LinearOrder) (h : well_order index) (map : index -> 
   lt_total := product_order_total map h;
 |}.
 
+(* Defining the produt of two linear orders as a special case *)
 Definition two : Suborder omega := {n : omega, n < 2}.
 
 Theorem two_well_order : well_order two.
@@ -567,7 +599,76 @@ end.
 
 Notation "X * Y" := (product two two_well_order (two_to_order_map X Y)).
 
-Check omega*omega.
+(* Definition of isomorphism between two linear orders *)
+Structure Isomorphism (X Y : LinearOrder) : Type := mkIsomorphism
+{
+iso :> Embedding X Y;
+surjective_map : forall y : Y, exists x : X, iso x = y;
+}.
+
+Definition isomorphic (X Y : LinearOrder) : Prop := exists _ : Isomorphism X Y, True.
+
+Notation "X ~= Y" := (isomorphic X Y) (at level 100) : type_scope.
+
+(* The identity map is an isomorphism *)
+Theorem id_embedding_surjective (X : LinearOrder) :
+forall y : X, exists x : X, id_embedding _ x = y.
+Proof.
+intros. exists y. unfold id_embedding. simpl. unfold id_embedding_map. reflexivity.
+Qed.
+
+Definition id_isomorphism (X : LinearOrder) : Isomorphism X X :=
+{|
+  iso := id_embedding X;
+  surjective_map := id_embedding_surjective X;
+|}. 
+
+(* Proving properties about isomorphisms *)
+Theorem iso_reflexive (X : LinearOrder) : X ~= X.
+Proof.
+exists (id_isomorphism X). reflexivity.
+Qed.
+
+(* thank you to https://stackoverflow.com/questions/62464821/how-to-make-an-inverse-function-in-coq *)
+Theorem iso_symmetric (X Y : LinearOrder) : (X ~= Y) -> (Y ~= X).
+Proof.
+intros. unfold isomorphic in *. destruct H.
+assert (forall y : Y, exists! z : X, x z = y).
+{ intros. destruct (surjective_map X Y x y).
+exists x0. split. assumption. intros. apply (order_preserving_injective X Y x).
+rewrite H0, H1. reflexivity. }
+assert (forall y : Y, {z : X | x z = y}).
+{ intros. specialize (H0 y). exact (constructive_definite_description _ H0). }
+assert (forall a b : Y, a < b -> (fun y : Y => proj1_sig (X0 y)) a < (fun y : Y => proj1_sig (X0 y)) b).
+{ intros. apply (order_preserving_backwards X Y x). 
+rewrite (proj2_sig (X0 a)). rewrite (proj2_sig (X0 b)). assumption. }
+assert (forall z : X, exists y : Y, (fun t : Y => proj1_sig (X0 t)) y = z).
+{ intros. exists (x z). specialize (proj2_sig (X0 (x z))). simpl.
+exact (order_preserving_injective X Y x (proj1_sig (X0 (x z))) z). }
+exists ({|
+  iso := {|
+    map := (fun y : Y => proj1_sig (X0 y));
+    order_preserving := H1;
+  |};
+  surjective_map := H2;
+|}). trivial.
+Qed.
+
+Theorem iso_transitive (X Y Z : LinearOrder) : (X ~= Y) -> (Y ~= Z) -> (X ~= Z).
+Proof.
+intros. unfold isomorphic in *. destruct H as [x_to_y]. destruct H0 as [y_to_z].
+Check (embedding_embedding x_to_y y_to_z).
+assert (forall z : Z, exists x : X, (embedding_embedding x_to_y y_to_z) x = z).
+{ intros. destruct (surjective_map Y Z y_to_z z). destruct (surjective_map _ _ x_to_y x).
+exists x0. simpl. unfold embedding_embedding_map. rewrite <- H1. rewrite H2. reflexivity. }
+exists {|
+  iso := (embedding_embedding x_to_y y_to_z);
+  surjective_map := H1;
+|}. trivial.
+Qed.
+
+
+
 
 
 
