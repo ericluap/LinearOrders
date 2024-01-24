@@ -27,18 +27,22 @@ lt_irreflexive : irreflexive lt;
 lt_total : total lt;
 }.
 
-Notation "x < y" := (lt _ x y).
+Arguments lt {_}.
+Arguments lt_transitive {_} {_} {_} {_}.
+Arguments lt_irreflexive {_}.
+
+Notation "x < y" := (lt x y).
 
 (* Basic properties of linear orders *)
-Theorem lt_not_eq : forall X : LinearOrder, forall a b : X, a < b -> a <> b.
+Theorem lt_not_eq : forall {X : LinearOrder}, forall {a b : X}, a < b -> a <> b.
 Proof.
-intros. unfold not. intros. rewrite H0 in H. exact ((X.(lt_irreflexive) b) H).
+intros. unfold not. intros. rewrite H0 in H. exact (lt_irreflexive b H).
 Qed.
 
-Theorem lt_not_gt : forall X : LinearOrder, forall a b : X, a < b -> ~(b < a).
+Theorem lt_not_gt : forall {X : LinearOrder}, forall {a b : X}, a < b -> ~(b < a).
 Proof.
-unfold not. intros. assert (a < a). { exact (X.(lt_transitive) a b a H H0). }
-assert (~a<a). { exact (X.(lt_irreflexive) a). }
+unfold not. intros. assert (a < a). { exact (lt_transitive H H0). }
+assert (~a<a). { exact (lt_irreflexive a). }
 contradiction.
 Qed.
 
@@ -97,7 +101,7 @@ Theorem reverse_transitive (X : LinearOrder) : transitive (reverse_relation X.(l
 Proof.
 unfold reverse_relation. unfold transitive.
 intros a b c hba hcb.
-exact (X.(lt_transitive) c b a hcb hba).
+exact (lt_transitive hcb hba).
 Qed.
 
 Theorem reverse_irreflexive (X : LinearOrder) : irreflexive (reverse_relation X.(lt)).
@@ -152,8 +156,8 @@ Proof.
 unfold not. intros.
 assert ((0 : omega) < a \/ 0 = a). { exact (zero_is_minimum a). }
 destruct H0.
-- exact (lt_not_gt _ _ _ H H0).
-- symmetry in H0. exact (lt_not_eq _ _ _ H H0).
+- exact (lt_not_gt H H0).
+- symmetry in H0. exact (lt_not_eq H H0).
 Qed.
 
 Theorem omega_has_minimum : has_minimum omega.
@@ -177,6 +181,9 @@ map :> X -> Y;
 order_preserving : forall a b : X, a < b -> map a < map b
 }.
 
+Arguments map {_}.
+Arguments order_preserving {_} {_} {_} {_} {_}.
+
 Definition embedding_embedding_map {X Y Z: LinearOrder} (f : Embedding X Y) (g : Embedding Y Z)
 : X -> Z := fun x : X => g (f x).
 
@@ -184,7 +191,7 @@ Theorem embedding_embedding_map_order_preserving {X Y Z: LinearOrder} (f : Embed
 : forall a b : X, a < b -> embedding_embedding_map f g a < embedding_embedding_map f g b.
 Proof.
 intros. unfold embedding_embedding_map. 
-exact (order_preserving Y Z g _ _ (order_preserving X Y f a b H)).
+exact (order_preserving (order_preserving H)).
 Qed.
 
 Definition embedding_embedding {X Y Z : LinearOrder} (f : Embedding X Y) (g : Embedding Y Z) 
@@ -194,53 +201,53 @@ Definition embedding_embedding {X Y Z : LinearOrder} (f : Embedding X Y) (g : Em
 |}.
 
 (* Definition of the identity embedding *)
-Definition id_embedding_map (X : LinearOrder) := fun x : X => x.
+Definition id_embedding_map {X : LinearOrder} := fun x : X => x.
 
 Theorem id_embedding_map_order_preserving (X : LinearOrder) : 
-forall a b : X, a < b -> id_embedding_map _ a < id_embedding_map _ b.
+forall a b : X, a < b -> id_embedding_map a < id_embedding_map b.
 Proof.
 intros. unfold id_embedding_map. assumption.
 Qed.
 
 Definition id_embedding (X : LinearOrder) : Embedding X X :=
 {|
-  map := id_embedding_map X;
+  map := id_embedding_map;
   order_preserving := id_embedding_map_order_preserving X;
 |}.
 
 (* Properties of order preserving maps *)
 Theorem order_preserving_backwards : 
-forall (X Y : LinearOrder), 
-forall (f : Embedding X Y),
-forall (a b : X), f a < f b -> a < b.
+forall {X Y : LinearOrder}, 
+forall {f : Embedding X Y},
+forall {a b : X}, f a < f b -> a < b.
 Proof.
 intros. assert (a < b \/ a = b \/ b < a).
 { exact (X.(lt_total) a b). }
 destruct H0.
 - assumption.
 - destruct H0.
-  -- assert (f a <> f b). { exact (lt_not_eq Y (f a) (f b) H). }
+  -- assert (f a <> f b). { exact (lt_not_eq H). }
      assert (f a = f b). { rewrite H0. reflexivity. }
      contradiction.
-  -- assert (f b < f a). { exact (order_preserving _ _ _ b a H0). }
-     assert (~ f b < f a). { exact (lt_not_gt Y (f a) (f b) H). }
+  -- assert (f b < f a). { exact (order_preserving H0). }
+     assert (~ f b < f a). { exact (lt_not_gt H). }
      contradiction.
 Qed.
 
 Theorem order_preserving_injective :
-forall (X Y : LinearOrder), 
-forall (f : Embedding X Y),
-forall (a b : X), f a = f b -> a = b.
+forall {X Y : LinearOrder}, 
+forall {f : Embedding X Y},
+forall {a b : X}, f a = f b -> a = b.
 Proof.
 intros. assert (a < b \/ a = b \/ b < a). { exact (X.(lt_total) a b). }
 destruct H0.
-- assert (f a < f b). { exact (order_preserving _ _ _ a b H0). }
-  assert (f a <> f b). { exact (lt_not_eq _ _ _ H1). }
+- assert (f a < f b). { exact (order_preserving H0). }
+  assert (f a <> f b). { exact (lt_not_eq H1). }
   contradiction.
 - destruct H0.
   -- assumption.
-  -- assert (f b < f a). { exact (order_preserving _ _ _ b a H0). }
-     assert (f b <> f a). { exact (lt_not_eq _ _ _ H1). }
+  -- assert (f b < f a). { exact (order_preserving H0). }
+     assert (f b <> f a). { exact (lt_not_eq H1). }
      assert (f a <> f b). { unfold not. intros. symmetry in H3. contradiction. }
      contradiction.
 Qed.
@@ -251,6 +258,8 @@ Structure Suborder (Y : LinearOrder) : Type := mkSuborder
 actual_order :> LinearOrder;
 embedding : Embedding actual_order Y;
 }.
+
+Arguments embedding {_} {_}.
 
 (* Every linear order is a suborder of itself *)
 Definition id_suborder (X : LinearOrder) : Suborder X :=
@@ -289,14 +298,14 @@ Qed.
 
 (* Proving that omega is a well-order *)
 Theorem zero_in_image_least : 
-forall A : Suborder omega, (exists a : A, embedding omega A a = 0) -> has_minimum A.
+forall A : Suborder omega, (exists a : A, embedding a = 0) -> has_minimum A.
 Proof.
 intros. destruct H. unfold has_minimum. exists x. unfold is_minimum. intros.
-assert (embedding _ _ x < embedding _ _ y \/ embedding _ _ x = embedding _ _ y).
-{ rewrite H. exact (zero_is_minimum (embedding _ _ y)). }
+assert (embedding x < embedding y \/ embedding x = embedding y).
+{ rewrite H. exact (zero_is_minimum (embedding y)). }
 destruct H0.
-- left. exact (order_preserving_backwards _ _ _ _ _ H0).
-- right. exact (order_preserving_injective _ _ _ _ _ H0).
+- left. exact (order_preserving_backwards H0).
+- right. exact (order_preserving_injective H0).
 Qed.
 
 Theorem less_than_1_is_0 : forall n : nat, (n < 1)%nat -> n = 0.
@@ -309,7 +318,7 @@ Qed.
 Theorem prev_not_in_image_least :
 forall A : Suborder omega,
 (exists a : A, 
-forall x : omega, x < embedding _ _ a -> forall b : A, embedding _ _ b <> x) ->
+forall x : omega, x < embedding a -> forall b : A, embedding b <> x) ->
 has_minimum A.
 Proof. 
 intros. destruct H. unfold has_minimum. exists x. unfold is_minimum.
@@ -318,9 +327,9 @@ destruct H0.
 - left. assumption.
 - destruct H0.
 * right. assumption.
-* left. assert (embedding _ _ y < embedding _ _ x). 
-{ exact (order_preserving  _ _ _ _ _ H0) . }
-assert (embedding _ _ y <> embedding _ _ y). { exact (H (embedding _ _ y) H1 y). }
+* left. assert (embedding y < embedding x). 
+{ exact (order_preserving H0) . }
+assert (embedding y <> embedding y). { exact (H (embedding y) H1 y). }
 contradiction.
 Qed.
 
@@ -330,21 +339,21 @@ destruct (classic (well_order omega)).
 - assumption.
 - unfold well_order in H. apply not_all_ex_not in H.
 destruct H.
-assert (forall n : omega, ~(exists a : x, embedding omega x a = n)).
+assert (forall n : omega, ~(exists a : x, embedding a = n)).
 { intros.
  induction n using (well_founded_induction lt_wf).
-destruct (classic (exists a : x, embedding omega x a = n)).
+destruct (classic (exists a : x, embedding a = n)).
 { destruct H1. 
 assert (exists a : x, 
-forall z : omega, z < embedding _ _ a -> forall b : x, embedding _ _ b <> z).
+forall z : omega, z < embedding a -> forall b : x, embedding b <> z).
 { exists x0. intros. subst. specialize (H0 z H2) as H3. firstorder. }
 specialize (prev_not_in_image_least _ H2) as H3.
 assert (x -> has_minimum x). { intros. assumption. }
 contradiction (H H4). }
 assumption. }
 assert (x -> has_minimum x). 
-{ intros. specialize (H0 (embedding _ _ X)) as H1. unfold not in H1.
-assert (exists a : x, embedding omega x a = embedding omega x X).
+{ intros. specialize (H0 (embedding X)) as H1. unfold not in H1.
+assert (exists a : x, embedding a = embedding X).
 { exists X. reflexivity. }
 contradiction. }
 contradiction.
@@ -378,7 +387,7 @@ Proof.
   destruct a as [s1|s2]. 
     destruct b as [r1|r2].
       destruct c.
-        simpl. simpl in hab. simpl in hbc. exact (X.(lt_transitive) s1 r1 s hab hbc).
+        simpl. simpl in hab. simpl in hbc. exact (lt_transitive hab hbc).
         reflexivity.
       destruct c.
         simpl in hbc. contradiction.
@@ -389,15 +398,15 @@ Proof.
         simpl in hab. contradiction.
       destruct c.
         simpl in hbc. contradiction.
-        simpl in hab. simpl in hbc. simpl. exact (Y.(lt_transitive) s2 s s0 hab hbc).
+        simpl in hab. simpl in hbc. simpl. exact (lt_transitive hab hbc).
  Qed.
 
 Theorem sum_lt_irreflexive (X Y : LinearOrder) : irreflexive (sum_lt X Y).
 Proof.
 intros a haa.
 destruct a.
-  simpl in haa. apply (lt_irreflexive X s). exact haa.
-  simpl in haa. apply (lt_irreflexive Y s). exact haa.
+  simpl in haa. apply (lt_irreflexive s). exact haa.
+  simpl in haa. apply (lt_irreflexive s). exact haa.
 Qed.
 
 Theorem sum_lt_total (X Y : LinearOrder) : total (sum_lt X Y).
@@ -437,14 +446,14 @@ Theorem pred_order_transitive
 (X : LinearOrder) (P : X -> Prop) : transitive (pred_order_relation X P).
 Proof.
 unfold transitive. intros. unfold pred_order_relation in *.
-exact (lt_transitive _ _ _ _ H H0).
+exact (lt_transitive H H0).
 Qed.
 
 Theorem pred_order_irreflexive
 (X : LinearOrder) (P : X -> Prop) : irreflexive (pred_order_relation X P).
 Proof.
 unfold irreflexive. intros. unfold pred_order_relation in *.
-exact (lt_irreflexive _ (proj1_sig a)).
+exact (lt_irreflexive (proj1_sig a)).
 Qed.
 
 Theorem pred_order_total
@@ -511,15 +520,15 @@ destruct (lt_total _ x x0).
 - exists x. specialize (H2 x H3) as H4. split. 
 -- rewrite H2 in H. assumption. assumption.
 -- intros. specialize (H1 j H5) as H6.
-assert (j < x0). { exact (lt_transitive _ _ _ _ H5 H3). }
+assert (j < x0). { exact (lt_transitive H5 H3). }
 specialize (H2 j H7) as H8.
 rewrite <- H8. rewrite H6. reflexivity.
 - exists x0. destruct H3.
--- rewrite H3 in H. split. exact (lt_transitive _ _ _ _ H H0).
+-- rewrite H3 in H. split. exact (lt_transitive H H0).
 intros. specialize (H2 j H4) as H5. rewrite <- H3 in H4. specialize (H1 j H4) as H6.
 rewrite H6. rewrite H5. reflexivity.
 -- specialize (H1 x0 H3) as H4. rewrite <- H4 in H0. split. assumption.
-intros. specialize (H2 j H5). assert (j < x). { exact (lt_transitive _ _ _ _ H5 H3). }
+intros. specialize (H2 j H5). assert (j < x). { exact (lt_transitive H5 H3). }
 specialize (H1 j H6). rewrite H1. rewrite H2. reflexivity.
 Qed.
 
@@ -527,7 +536,7 @@ Theorem product_order_irreflexive {index : LinearOrder} (map : index -> LinearOr
 irreflexive (product_order map).
 Proof.
 unfold irreflexive. intros. unfold product_order. unfold not. intros. destruct H.
-destruct H. contradiction (lt_irreflexive _ _ H).
+destruct H. contradiction (@lt_irreflexive _ _ H).
 Qed.
 
 Theorem product_differences_has_min 
@@ -561,8 +570,8 @@ unfold is_minimum in H0. unfold subset_pred_order in *. simpl in x. simpl in H0.
 specialize (H0 (exist (fun i : index => a i <> b i) j H4)) as H5. 
 unfold pred_order_relation in H5. simpl in H5.
 destruct H5.
-{ contradiction (lt_not_gt _ _ _ H3 H5). }
-subst. simpl in *. contradiction (lt_irreflexive _ j).
+{ contradiction (lt_not_gt H3 H5). }
+subst. simpl in *. contradiction (lt_irreflexive j).
 -- destruct H2. { contradiction. }
 { right. right. unfold product_order. exists (proj1_sig x). split. assumption.
 intros. destruct (classic (a j = b j)). symmetry. assumption.
@@ -570,8 +579,8 @@ unfold is_minimum in H0. unfold subset_pred_order in *. simpl in x. simpl in H0.
 specialize (H0 (exist (fun i : index => a i <> b i) j H4)) as H5. 
 unfold pred_order_relation in H5. simpl in H5.
 destruct H5.
-{ contradiction (lt_not_gt _ _ _ H3 H5). }
-subst. simpl in *. contradiction (lt_irreflexive _ j). }
+{ contradiction (lt_not_gt H3 H5). }
+subst. simpl in *. contradiction (lt_irreflexive j). }
 Qed.
 
 Definition product (index : LinearOrder) (h : well_order index) (map : index -> LinearOrder) :=
@@ -729,28 +738,39 @@ exists (id_isomorphism X). reflexivity.
 Qed.
 
 (* thank you to https://stackoverflow.com/questions/62464821/how-to-make-an-inverse-function-in-coq *)
-Theorem iso_symmetric (X Y : LinearOrder) : (X ~= Y) -> (Y ~= X).
+Theorem iso_inverse {X Y : LinearOrder} (f : Isomorphism X Y) : 
+exists (g : Isomorphism Y X), (forall x : X, g (f x) = x) /\ (forall y : Y, f (g y) = y).
 Proof.
-intros. unfold isomorphic in *. destruct H.
-assert (forall y : Y, exists! z : X, x z = y).
-{ intros. destruct (surjective_map X Y x y).
-exists x0. split. assumption. intros. apply (order_preserving_injective X Y x).
-rewrite H0, H1. reflexivity. }
-assert (forall y : Y, {z : X | x z = y}).
-{ intros. specialize (H0 y). exact (constructive_definite_description _ H0). }
+assert (forall y : Y, exists! z : X, f z = y).
+{ intros. destruct (surjective_map X Y f y).
+exists x. split. assumption. intros. apply (@order_preserving_injective X Y f).
+rewrite H, H0. reflexivity. }
+assert (forall y : Y, {z : X | f z = y}).
+{ intros. specialize (H y). exact (constructive_definite_description _ H). }
 assert (forall a b : Y, a < b -> (fun y : Y => proj1_sig (X0 y)) a < (fun y : Y => proj1_sig (X0 y)) b).
-{ intros. apply (order_preserving_backwards X Y x). 
+{ intros. apply (@order_preserving_backwards X Y f). 
 rewrite (proj2_sig (X0 a)). rewrite (proj2_sig (X0 b)). assumption. }
 assert (forall z : X, exists y : Y, (fun t : Y => proj1_sig (X0 t)) y = z).
-{ intros. exists (x z). specialize (proj2_sig (X0 (x z))). simpl.
-exact (order_preserving_injective X Y x (proj1_sig (X0 (x z))) z). }
+{ intros. exists (f z). specialize (proj2_sig (X0 (f z))). simpl.
+exact (@order_preserving_injective X Y f (proj1_sig (X0 (f z))) z). }
 exists ({|
   iso := {|
     map := (fun y : Y => proj1_sig (X0 y));
-    order_preserving := H1;
+    order_preserving := H0;
   |};
-  surjective_map := H2;
-|}). trivial.
+  surjective_map := H1;
+|}).
+split.
+- simpl. intros. specialize (proj2_sig (X0 (f x))) as H2. simpl in H2.
+exact (@order_preserving_injective X Y f (proj1_sig (X0 (f x))) x H2).
+- simpl. intros. exact (proj2_sig (X0 y)).
+Qed.
+
+Theorem iso_symmetric (X Y : LinearOrder) : (X ~= Y) -> (Y ~= X).
+Proof.
+intros. unfold isomorphic in *. destruct H.
+specialize (iso_inverse x) as H1. destruct H1.
+exists x0. trivial.
 Qed.
 
 Theorem iso_transitive (X Y Z : LinearOrder) : (X ~= Y) -> (Y ~= Z) -> (X ~= Z).
@@ -776,17 +796,19 @@ Structure ConvexSuborder (Y : LinearOrder) : Type := mkConvexSuborder
 {
 source_order :> Suborder Y;
 convex_embedding : forall a c : source_order, forall y : Y, 
-  (embedding _ _ a) < y -> y < (embedding _ _ c) -> (exists b : source_order, embedding _ _ b = y);
+  (embedding a) < y -> y < (embedding c) -> (exists b : source_order, embedding b = y);
 }.
+
+Arguments source_order {_}.
 
 Definition convex_predicate (X : LinearOrder) (P : X -> Prop) :=
 forall a b c : X, a < b -> b < c -> P a -> P c -> P b.
 
 Theorem convex_predicate_convex (X : LinearOrder) (P : X -> Prop) (h : convex_predicate X P) :
-forall a c : {x : X, P x}, forall y : X, (embedding _ _ a) < y -> y < (embedding _ _ c) ->
-(exists b : {x : X, P x}, embedding _ _ b = y).
+forall a c : {x : X, P x}, forall y : X, (embedding a) < y -> y < (embedding c) ->
+(exists b : {x : X, P x}, embedding b = y).
 Proof.
-intros. specialize (h (embedding _ _ a) y (embedding _ _ c)) as H1.
+intros. specialize (h (embedding a) y (embedding c)) as H1.
 specialize (H1 H H0 (proj2_sig a) (proj2_sig c)) as b.
 exists (exist _ y b). simpl. reflexivity.
 Qed.
@@ -801,26 +823,141 @@ Theorem pred_coord_convex (X Y : LinearOrder) (x : X) :
 convex_predicate (X*Y) (fun j : (product two two_well_order (two_to_order_map X Y)) => j Zero = x).
 Proof.
 unfold convex_predicate. intros.
-specialize (lt_transitive _ _ _ _ H H0) as H7. unfold lt in *. simpl in *. unfold product_order in *. simpl in *.
+specialize (lt_transitive H H0) as H7. unfold lt in *. simpl in *. unfold product_order in *. simpl in *.
 destruct H. destruct H. destruct H0. destruct H0. destruct H7. destruct H5.
 destruct x0,x1,x2.
-- (specialize (lt_transitive _ _ _ _ H H0) as H7). 
-  rewrite H1 in H5. rewrite H2 in H5. contradiction (lt_irreflexive _ x).
-- specialize (lt_transitive _ _ _ _ H H0) as H7. rewrite H1 in H7. rewrite H2 in H7.
-  contradiction (lt_irreflexive _ x).
-- rewrite H1 in H5. rewrite H2 in H5. contradiction (lt_irreflexive _ x).
+- (specialize (lt_transitive H H0) as H7). 
+  rewrite H1 in H5. rewrite H2 in H5. contradiction (lt_irreflexive x).
+- specialize (lt_transitive H H0) as H7. rewrite H1 in H7. rewrite H2 in H7.
+  contradiction (lt_irreflexive x).
+- rewrite H1 in H5. rewrite H2 in H5. contradiction (lt_irreflexive x).
 - specialize (H4 Zero). simpl in H4. specialize (H4 I). rewrite H4. assumption.
-- rewrite H1 in H5. rewrite H2 in H5. contradiction (lt_irreflexive _ x).
+- rewrite H1 in H5. rewrite H2 in H5. contradiction (lt_irreflexive x).
 - specialize (H3 Zero). simpl in H3. specialize (H3 I). rewrite <- H3. assumption.
-- rewrite H1 in H5. rewrite H2 in H5. contradiction (lt_irreflexive _ x).
+- rewrite H1 in H5. rewrite H2 in H5. contradiction (lt_irreflexive x).
 - specialize (H4 Zero). simpl in H4. specialize (H4 I). rewrite H4. assumption.
 Qed.
 
 Definition prod_coord_suborder (X Y : LinearOrder) (x : X) : ConvexSuborder (X*Y) :=
 { j : X*Y , j Zero = x , pred_coord_convex X Y x}.
 
+(* 
+x ** Y is the convex suborder of X*Y with first coordinate x
+xY = {(x, y)\in XY | y\in Y} 
+*)
+Notation "x ** Y" := (prod_coord_suborder _ Y x) (at level 100) : type_scope.
 
-Definition R (X Y A B : LinearOrder) (I : ConvexSuborder (X*A)) (J : ConvexSuborder (Y*B)) 
+
+(* Formalizing the set R_f(x) = {y\in Y | yB \cap f(xA \cap I) \ne \emptyset}*)
+
+(* 
+For a fixed x, R_predicate is the predicate a y\in Y should satisfy to be in R_f(x) 
+*)
+Definition R_predicate {X Y A B : LinearOrder} {I : ConvexSuborder (X*A)} {J : ConvexSuborder (Y*B)} 
+(f : Isomorphism I J) (x : X) (y : Y) :=
+exists (j : J) (j' : y ** B) (i : I) (i' : x ** A),
+(embedding i) = (embedding i') /\ (embedding j) = (embedding j') /\ f i = j.
+
+
+(*
+Definition R_suborder {X Y A B : LinearOrder} (I : ConvexSuborder (X*A)) (J : ConvexSuborder (Y*B)) 
 (f : Isomorphism (source_order (X*A) I) (source_order (Y*B) J)) : Suborder X :=
 { x : X, exists j : J, exists i : I, exists a : { j : X*A , j Zero = x }, 
-(embedding _ _ i) = (embedding _ _ a) /\ f i = j }.
+(embedding i) = (embedding a) /\ f i = j }.
+
+*)
+
+Definition R_suborder {X Y A B : LinearOrder} (I : ConvexSuborder (X*A)) (J : ConvexSuborder (Y*B)) 
+(f : Isomorphism I J) (x : X) : Suborder Y :=
+{ y : Y, R_predicate f x y}.
+
+(* Turn (x : X) and (y : Y) into pair (x,y) : X*Y *)
+Definition prod_elem {X Y : LinearOrder} (x : X) (y: Y) : (product_set (two_to_order_map X Y)) :=
+(fun a => match a with
+| Zero => x
+| One => y
+end).
+
+Theorem zero_prod_elem {X Y : LinearOrder} (x : X) (y : Y) : (prod_elem x y) Zero = x.
+Proof. reflexivity. Qed.
+
+(* Turn (x : X) and (y : Y) into the pair (x,y) : x**Y *)
+Definition coord_prod_elem {X Y : LinearOrder} (x : X) (y: Y) : x**Y :=
+exist 
+(fun (a : (product_set (two_to_order_map X Y))) => a Zero = x) 
+(prod_elem x y)
+(zero_prod_elem x y).
+
+
+Theorem R_suborder_convex {X Y A B : LinearOrder} {I : ConvexSuborder (X*A)} {J : ConvexSuborder (Y*B)}
+(f : Isomorphism I J) :
+forall x : X, convex_predicate Y (R_predicate f x).
+Proof.
+unfold convex_predicate. intros. unfold R_predicate in *. 
+destruct H1. destruct H1. destruct H1. destruct H1. destruct H1. destruct H3.
+destruct H2. destruct H2. destruct H2. destruct H2. destruct H2. destruct H5.
+assert (j' : b ** B). { exact (coord_prod_elem b (proj1_sig x1 One)). }
+assert (proj1_sig x1 Zero < proj1_sig j' Zero) as G1.
+{ rewrite (proj2_sig x1). rewrite (proj2_sig j'). assumption. }
+assert (proj1_sig j' Zero < proj1_sig x5 Zero) as G2.
+{ rewrite (proj2_sig j'). rewrite (proj2_sig x5). assumption. }
+assert ((embedding x1) < (embedding j')). 
+{
+unfold lt. simpl. unfold pred_order_embedding. unfold product_order.
+exists Zero. split. assumption.
+intros. destruct j. contradiction. contradiction.
+}
+assert ((embedding j') < (embedding x5)).
+{
+unfold lt. simpl. unfold pred_order_embedding. unfold product_order.
+exists Zero. split. assumption.
+intros. destruct j. contradiction. contradiction.
+}
+rewrite <- H3 in H7. rewrite <- H5 in H8.
+specialize (convex_embedding _ J x0 x4 (embedding j') H7 H8) as H9. destruct H9.
+exists x8. exists j'.
+specialize (surjective_map _ _ f x8) as H10. destruct H10.
+exists x9.
+assert (embedding x3 < embedding x9).
+{
+rewrite <- H1.
+assert (x2 < x9).
+{ apply (@order_preserving_backwards _ _ f).
+rewrite H10. rewrite H4.
+apply (@order_preserving_backwards _ _ embedding).
+rewrite H9. assumption. }
+apply (@order_preserving _ _ embedding). assumption.
+}
+assert (embedding x9 < embedding x7).
+{
+rewrite <- H2.
+assert (x9 < x6).
+{ apply (@order_preserving_backwards _ _ f).
+rewrite H10. rewrite H6.
+apply (@order_preserving_backwards _ _ embedding).
+rewrite H9. assumption. }
+apply (@order_preserving _ _ embedding). assumption.
+}
+specialize (convex_embedding _ (x**A) x3 x7 (embedding x9) H11 H12) as H13.
+destruct H13. exists x10.
+split. symmetry. assumption.
+split. assumption. assumption.
+Qed.
+
+(* R_f(x) as a ConvexSuborder of Y *)
+Definition R {X Y A B : LinearOrder} {I : ConvexSuborder (X*A)} {J : ConvexSuborder (Y*B)}
+(f : Isomorphism I J) (x : X) : ConvexSuborder Y :=
+{y : Y, R_predicate f x y, R_suborder_convex f x}.
+
+
+
+
+
+
+
+
+
+
+
+
+
