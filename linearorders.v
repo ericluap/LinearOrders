@@ -1,17 +1,4 @@
-(* Basic properties of relations *)
-Definition relation (X : Type) := X -> X -> Prop.
-
-Definition transitive {X : Type} (R : relation X) :=
-  forall a b c : X, (R a b) -> (R b c) -> (R a c).
-
-Definition irreflexive {X : Type} (R : relation X) :=
-  forall a : X, not (R a a).
-
-Definition total {X : Type} (R : relation X) :=
-  forall a b : X, (R a b) \/ (a = b) \/ (R b a).
-
-Definition reverse_relation {X : Type} (R : relation X) : relation X :=
-  fun a b : X => R b a.
+From LO Require Export Relation. 
 
 (* Define what a linear order is *)
 Structure LinearOrder : Type := mkLinearOrder

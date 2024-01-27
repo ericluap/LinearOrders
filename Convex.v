@@ -64,3 +64,9 @@ x ** Y is the convex suborder of X*Y with first coordinate x
 xY = {(x, y)\in XY | y\in Y} 
 *)
 Notation "x ** Y" := (prod_coord_suborder _ Y x) (at level 100) : type_scope.
+
+Structure ConvexEquivRelation (X : LinearOrder) := mkEquivRelation {
+  eq_relation :> EquivRelation X;
+  eq_convex : forall a b c : X, a < b -> b < c -> 
+    actual_relation X eq_relation a c -> actual_relation X eq_relation a b;
+}.
