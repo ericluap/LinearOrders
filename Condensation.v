@@ -133,3 +133,21 @@ mkLinearOrder
   (condensation_order_transitive T R)
   (condensation_order_irreflexive T R)
   (condensation_order_total T R).
+
+Notation "X / P" := (CondensationOrder X P).
+
+Theorem condensation_elem_convex {T : LinearOrder} {P : ConvexEquivRelation T}
+(l : T/P) : convex_predicate T (proj1_sig l).
+Proof.
+unfold convex_predicate. intros.
+specialize (proj2_sig l) as H3. simpl in H3. destruct H3.
+rewrite H3 in H1. rewrite H3 in H2. apply eq_symmetric in H1.
+specialize (eq_transitive T P _ _ _ H1 H2) as H4.
+specialize (eq_convex T P a b c H H0 H4) as H5.
+apply eq_symmetric in H1.
+specialize (eq_transitive T P _ _ _ H1 H5) as H6.
+rewrite <- H3 in H6. assumption.
+Qed.
+
+Definition condensation_elem_to_interval {T : LinearOrder} {P : ConvexEquivRelation T}
+(l : T/P) : ConvexSuborder T := {t : T, (proj1_sig l t), condensation_elem_convex l}.
