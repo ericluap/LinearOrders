@@ -62,3 +62,6 @@ Definition subset_pred_order (X : LinearOrder) (P : X -> Prop) : Suborder X :=
 |}.
 
 Notation "{ x : A , P }" := (subset_pred_order A (fun x => P)) (x at level 99) : type_scope.
+
+Definition create_elem_of_pred_order {X : LinearOrder} (P : X -> Prop)
+(x : X) (p : P x) : {z : X, P z} := exist _ x p.

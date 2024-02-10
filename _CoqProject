@@ -11,3 +11,5 @@ Isomorphism.v
 Rf.v
 Relation.v
 Condensation.v
+Finiteness.v
+FiniteCondensation.v
