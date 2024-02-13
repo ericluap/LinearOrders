@@ -14,6 +14,7 @@ Arguments lt_transitive {_} {_} {_} {_}.
 Arguments lt_irreflexive {_}.
 
 Notation "x < y" := (lt x y).
+Notation "x <= y" := (x < y \/ x = y).
 
 (* Basic properties of linear orders *)
 Theorem lt_not_eq : forall {X : LinearOrder}, forall {a b : X}, a < b -> a <> b.

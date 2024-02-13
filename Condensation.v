@@ -3,6 +3,7 @@ From LO Require Export linearorders.
 Require Import Classical.
 Require Import FunctionalExtensionality.
 Require Import PropExtensionality.
+Require Import IndefiniteDescription.
 
 (* inspired by http://poleiro.info/posts/2019-12-25-quotients-in-coq.html
   and https://coq.discourse.group/t/naive-quotients-of-types/882 *)
@@ -134,20 +135,36 @@ mkLinearOrder
   (condensation_order_irreflexive T R)
   (condensation_order_total T R).
 
-Notation "X / P" := (CondensationOrder X P).
+Notation "X / P" := (CondensationOrder X (P X)).
 
-Theorem condensation_elem_convex {T : LinearOrder} {P : ConvexEquivRelation T}
-(l : T/P) : convex_predicate T (proj1_sig l).
+Definition CondensationRelation := 
+forall X : LinearOrder, ConvexEquivRelation X.
+
+Theorem condensation_elem_convex {T : LinearOrder} {P : CondensationRelation}
+(l : T / P) : convex_predicate T (proj1_sig l).
 Proof.
 unfold convex_predicate. intros.
 specialize (proj2_sig l) as H3. simpl in H3. destruct H3.
 rewrite H3 in H1. rewrite H3 in H2. apply eq_symmetric in H1.
-specialize (eq_transitive T P _ _ _ H1 H2) as H4.
-specialize (eq_convex T P a b c H H0 H4) as H5.
+specialize (eq_transitive T (P T) _ _ _ H1 H2) as H4.
+specialize (eq_convex T (P T) a b c H H0 H4) as H5.
 apply eq_symmetric in H1.
-specialize (eq_transitive T P _ _ _ H1 H5) as H6.
+specialize (eq_transitive T (P T) _ _ _ H1 H5) as H6.
 rewrite <- H3 in H6. assumption.
 Qed.
 
-Definition condensation_elem_to_interval {T : LinearOrder} {P : ConvexEquivRelation T}
+Definition condensation_elem_to_interval {T : LinearOrder} {P : CondensationRelation}
 (l : T/P) : ConvexSuborder T := {t : T, (proj1_sig l t), condensation_elem_convex l}.
+
+Theorem condensation_elem_interval_nonempty {T : LinearOrder}
+{P : CondensationRelation} (l : T/P) : (condensation_elem_to_interval l).
+Proof.
+unfold condensation_elem_to_interval.
+unfold convex_pred_order.
+unfold CondensationOrder in l.
+specialize (proj2_sig l) as H. simpl in H.
+apply constructive_indefinite_description.
+destruct H.
+exists x.
+rewrite H. apply eq_reflexive.
+Qed.

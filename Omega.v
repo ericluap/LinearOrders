@@ -63,7 +63,7 @@ unfold is_minimum. intros. induction y.
 - right. trivial.
 - destruct IHy.
   --  apply le_S in H. left. assumption.
-  --  left. assert (0 <= y). rewrite H. trivial. apply le_n_S in H0. assumption.
+  --  left. assert (Peano.le 0 y). rewrite H. trivial. apply le_n_S in H0. assumption.
 Qed.
 
 Theorem not_lt_zero : forall a : omega, ~(a < 0).

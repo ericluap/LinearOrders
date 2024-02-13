@@ -70,3 +70,21 @@ Structure ConvexEquivRelation (X : LinearOrder) := mkEquivRelation {
   eq_convex : forall a b c : X, a < b -> b < c -> 
     actual_relation X eq_relation a c -> actual_relation X eq_relation a b;
 }.
+
+Theorem z_Zero_equals_z_Zero {X Y : LinearOrder}
+(z : (product two two_well_order (two_to_order_map X Y))) :
+z Zero = z Zero.
+Proof. reflexivity. Qed.
+
+Definition elem_in_coord_suborder {X Y : LinearOrder}
+(z : (product two two_well_order (two_to_order_map X Y))) : (z Zero) ** Y :=
+exist _ z (z_Zero_equals_z_Zero z).
+
+Theorem all_elem_in_coord_suborder {X Y : LinearOrder} :
+forall (z : (product two two_well_order (two_to_order_map X Y))),
+ exists x : X, exists z' : x**Y, embedding z' = z.
+Proof.
+intros. exists (z Zero).
+exists (elem_in_coord_suborder z).
+reflexivity.
+Qed.
