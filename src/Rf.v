@@ -1,5 +1,7 @@
 From LO Require Export Convex.
 From LO Require Export Isomorphism.
+From LO Require Export Finiteness.
+Require Import FunctionalExtensionality.
 
 (* Formalizing the set R_f(x) = {y\in Y | yB \cap f(xA \cap I) \ne \emptyset}*)
 
@@ -93,11 +95,43 @@ Definition R {X Y A B : LinearOrder} {I : ConvexSuborder (X*A)} {J : ConvexSubor
 (f : Isomorphism I J) (x : X) : ConvexSuborder Y :=
 {y : Y, R_predicate f x y, R_suborder_convex f x}.
 
-Theorem R_preserves_order {X Y A B : LinearOrder} {I : ConvexSuborder (X*A)} {J : ConvexSuborder (Y*B)}
-(f : Isomorphism I J) (x1 x2 : X) :
-(exists (y1 : R f x1) (y2 : R f x2), embedding y1 < embedding y2) -> x1 <= x2.
+Theorem create_R_for_J {X Y A B : LinearOrder} {I : ConvexSuborder (X*A)} {J : ConvexSuborder (Y*B)}
+(f : Isomorphism I J) (j : J) :
+exists x : X, exists y : R f x, embedding y = (embedding j Zero).
 Proof.
-intros. destruct H. destruct H. unfold R in *.
+set (y := embedding j Zero). simpl in y.
+specialize (iso_inverse f) as H. destruct H as [fi]. destruct H.
+set (i := fi j).
+set (x := embedding i Zero). simpl in x.
+set (b := embedding j One). simpl in b.
+set (j' := coord_prod_elem y b).
+assert (embedding j' One = embedding j One).
+{ reflexivity. }
+assert (embedding j' Zero = embedding j Zero).
+{ reflexivity. }
+assert (forall s : two_set, embedding j' s = embedding j s).
+{ intros. destruct s; assumption. }
+assert (embedding j' = embedding j).
+{ apply functional_extensionality_dep. assumption. }
+set (a := embedding i One). simpl in a.
+set (i' := coord_prod_elem x a).
+assert (R_predicate f x y).
+{ unfold R_predicate. exists j. exists j'. exists i. exists i'.
+  split.
+  { simpl. apply functional_extensionality_dep. intros. unfold prod_elem.
+    destruct x0; reflexivity. }
+  { split.
+    { symmetry. assumption. }
+    { exact (H0 j). } } }
+set (y' := exist _ y H5).
+exists x. exists y'. reflexivity.
+Qed.
+
+Theorem R_preserves_order {X Y A B : LinearOrder} {I : ConvexSuborder (X*A)} {J : ConvexSuborder (Y*B)}
+(f : Isomorphism I J) (x1 x2 : X) (x : R f x1) (x0 : R f x2):
+embedding x < embedding x0 -> x1 <= x2.
+Proof.
+intros. unfold R in *.
 specialize (proj2_sig x) as H1. simpl in H1.
 specialize (proj2_sig x0) as H2. simpl in H2.
 unfold R_predicate in H1, H2.
@@ -136,4 +170,78 @@ destruct x12.
   unfold pred_order_embedding in H15. simpl in H13, H14. simpl in H15.
   rewrite H13 in H15. rewrite H14 in H15. right. assumption. }
 Qed.
+
+Theorem create_R_inbetween {X Y A B : LinearOrder} {I : ConvexSuborder (X*A)} {J : ConvexSuborder (Y*B)}
+(f : Isomorphism I J) (x1 x2 : X) (y : Y) (y1 : R f x1) (y2 : R f x2)
+(p1 : embedding y1 < y) (p2 : y < embedding y2) :
+exists x : X, (exists y' : R f x, embedding y' = y) /\ x1 <= x /\ x <= x2.
+Proof.
+specialize (proj2_sig y1) as H1. specialize (proj2_sig y2) as H2.
+simpl in H1, H2. destruct H1, H2. destruct H, H0. destruct H, H0.
+destruct H, H0. destruct H, H0. destruct H1, H2.
+set (b := (proj1_sig x4 One)). simpl in b.
+set (yb := coord_prod_elem y b).
+assert (embedding x < embedding yb).
+{ unfold lt. simpl. unfold product_order. exists Zero.
+  simpl in H1. rewrite H1. simpl. specialize (proj2_sig x3) as H5.
+  simpl in H5. unfold pred_order_embedding. split.
+  { simpl. rewrite H5. assumption. }
+  { intros. unfold two_relation in H6. destruct j; destruct H6. } }
+assert (embedding yb < embedding x0).
+{ unfold lt. simpl. unfold product_order. exists Zero.
+  simpl in H2. rewrite H2. simpl. specialize (proj2_sig x4) as H6.
+  simpl in H6. unfold pred_order_embedding. split.
+  { simpl. rewrite H6. assumption. }
+  { intros. unfold two_relation in H7. destruct j; destruct H7. } }
+specialize (convex_embedding (Y*B) J x x0 (embedding yb) H5 H6) as H7.
+destruct H7. specialize (create_R_for_J f x9) as H8.
+destruct H8. destruct H8. exists x10. split. 
+{ exists x11. rewrite H8. rewrite H7. reflexivity. }
+{ split.
+  { assert (embedding y1 < embedding x11).
+    { rewrite H8. rewrite H7. assumption. }
+    exact (R_preserves_order f x1 x10 y1 x11 H9). }
+  { assert (embedding x11 < embedding y2).
+    { rewrite H8. rewrite H7. assumption. }
+    exact (R_preserves_order f x10 x2 x11 y2 H9). } }
+Qed.
+
+Definition R_interval_predicate {X Y A B : LinearOrder} {I : ConvexSuborder (X*A)} {J : ConvexSuborder (Y*B)}
+(f : Isomorphism I J) (E : ConvexSuborder X) (y : Y) :=
+  exists (e : E) (y' : R f (embedding e)), embedding y' = y.
+
+Definition R_interval_suborder {X Y A B : LinearOrder} {I : ConvexSuborder (X*A)} {J : ConvexSuborder (Y*B)}
+(f : Isomorphism I J) (E : ConvexSuborder X) : Suborder Y :=
+  {y : Y, R_interval_predicate f E y}.
+
+Theorem R_interval_predicate_convex {X Y A B : LinearOrder} {I : ConvexSuborder (X*A)} {J : ConvexSuborder (Y*B)}
+(f : Isomorphism I J) :
+forall E : ConvexSuborder X, convex_predicate Y (R_interval_predicate f E).
+Proof.
+intros. unfold convex_predicate. intros.
+unfold R_interval_predicate in *. destruct H1. destruct H1. 
+destruct H2. destruct H2.
+assert (embedding x0 < b). { rewrite H1. assumption. }
+assert (b < embedding x2). { rewrite H2. assumption. }
+specialize (create_R_inbetween f (embedding x) (embedding x1) b x0 x2 H3 H4) as H5.
+destruct H5. destruct H5. destruct H5. destruct H6.
+destruct H6.
+{ destruct H7.
+  { specialize (convex_embedding X E x x1 x3 H6 H7) as H8.
+    destruct H8. exists x5. subst. exists x4. reflexivity. }
+  { exists x1. rewrite <- H7. exists x4. assumption. } }
+{ exists x. rewrite H6. exists x4. assumption. }
+Qed.
+
+Definition R_interval {X Y A B : LinearOrder} {I : ConvexSuborder (X*A)} {J : ConvexSuborder (Y*B)}
+(f : Isomorphism I J) (E : ConvexSuborder X) : ConvexSuborder Y :=
+  {y : Y, R_interval_predicate f E y, R_interval_predicate_convex f E}.
+
+(*
+Theorem R_finite_to_infinite {X Y A B : LinearOrder} {I : ConvexSuborder (X*A)} {J : ConvexSuborder (Y*B)}
+(f : Isomorphism I J) :
+forall (E : ConvexSuborder X), is_finite E -> is_infinite (R_interval f E) ->
+exists x : X, is_infinite (R f x).
+Proof.
+intros.*)
 

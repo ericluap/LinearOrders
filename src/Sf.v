@@ -88,13 +88,11 @@ assert (embedding q' = embedding q).
 assert (embedding x1 < embedding q').
 { rewrite <- H1. assumption. }
 assert (embedding x <= r).
-{ apply (R_preserves_order f (embedding x) r).
-  exists x1. exists q'. assumption. }
+{ exact (R_preserves_order f (embedding x) r x1 q' H24). }
 assert (embedding q' < embedding x4).
 { rewrite <- H2. assumption. }
 assert (r <= embedding x2).
-{ apply (R_preserves_order f r (embedding x2)).
-  exists q'. exists x4. assumption. }
+{ exact (R_preserves_order f r (embedding x2) q' x4 H26). }
 destruct H25.
 { destruct H27.
   { specialize (convex_embedding 
@@ -110,3 +108,91 @@ Definition S {X Y A B : LinearOrder}
 {I : ConvexSuborder (X*A)} {J : ConvexSuborder (Y*B)} 
 (f : Isomorphism I J) (l : X / F) : ConvexSuborder (Y / F) :=
   {q : Y / F, S_predicate f l q, S_suborder_convex f l}. 
+
+
+Theorem multiple_S_infinite_apart_in_Y {X Y A B : LinearOrder}
+{I : ConvexSuborder (X*A)} {J : ConvexSuborder (Y*B)}
+(f : Isomorphism I J) :
+forall l : X / F, card_gt (S f l) 1 ->
+exists y1 y2 : S f l,
+exists y1' : condensation_elem_to_interval (embedding y1),
+exists y2' : condensation_elem_to_interval (embedding y2),
+ ~(finite_relation Y (embedding y1') (embedding y2')).
+Proof.
+intros. unfold card_gt in H. destruct H.
+assert ((0:omega) < (2:omega)).
+{ simpl. auto. }
+assert ((1:omega) < (2:omega)).
+{ simpl. auto. }
+set (zero := exist _ (0:omega) H0 : {w:omega, w<1+1}).
+set (one := exist _ (1:omega) H1 : {w:omega, w<1+1}).
+set (a := x zero).
+set (b := x one).
+exists a. exists b.
+specialize (proj2_sig a) as H2. simpl in H2.
+unfold S_predicate in H2. destruct H2. destruct H2. destruct H2.
+specialize (proj2_sig b) as H3. simpl in H3.
+unfold S_predicate in H3. destruct H3. destruct H3. destruct H3.
+exists x1. exists x4. unfold not.
+intros.
+assert (actual_relation _ (F Y) (embedding x1) (embedding x4)).
+{ unfold F. simpl. assumption. }
+specialize (related_means_eq_condensation H5) as H6.
+assert (a < b).
+{ assert (zero < one).
+  { simpl. auto. }
+  exact (order_preserving H7). }
+specialize (condensation_elem_same_condensation (proj1_sig a) x1) as H8.
+specialize (condensation_elem_same_condensation (proj1_sig b) x4) as H9.
+unfold S_predicate in H8, H9. simpl in H8, H9. simpl in H6. rewrite H8 in H6.
+rewrite H9 in H6.
+assert (proj1_sig a < proj1_sig b).
+{ unfold lt in H7. simpl in H7. unfold condensation_order in H7.
+  specialize (H7 (embedding x1) (embedding x1)).
+  specialize (H7 (proj2_sig x1)).
+  specialize (proj2_sig x1) as H10. simpl in H10.
+  assert (forall z, proj1_sig (proj1_sig a) z = proj1_sig (proj1_sig b) z).
+  { intros. f_equal. assumption. }
+  specialize (H11 (proj1_sig x1)). unfold S_predicate in H11.
+  unfold condensation_elem_to_interval in H11. simpl in H11.
+  rewrite H11 in H10. specialize (H7 H10).
+  destruct (lt_irreflexive _ H7). }
+destruct (lt_not_eq H10 H6).
+Qed.
+
+(*
+
+Theorem multiple_S_infinite_R {X Y A B : LinearOrder}
+{I : ConvexSuborder (X*A)} {J : ConvexSuborder (Y*B)}
+(f : Isomorphism I J) :
+(exists l : X / F, (card_gt (S f l) 1)) ->
+exists x : X, is_infinite (R f x).
+Proof.
+intros. destruct H. specialize (multiple_S_infinite_apart_in_Y f x H) as H1.
+destruct H1. destruct H0. destruct H0. destruct H0.
+specialize (iso_inverse f) as H1. destruct H1. destruct H1.
+set (a := x4 (embedding x2)).
+
+ unfold card_gt in H. destruct H.
+assert ((0:omega) < (2:omega)).
+{ simpl. auto. }
+assert ((1:omega) < (2:omega)).
+{ simpl. auto. }
+set (zero := exist _ (0:omega) H0 : {w:omega, w<1+1}).
+set (one := exist _ (1:omega) H1 : {w:omega, w<1+1}).
+set (a := x0 zero).
+set (b := x0 one).
+assert (a < b).
+{ assert (zero < one).
+  { simpl. auto. }
+  exact (order_preserving H2). }
+specialize (proj2_sig a) as H3. simpl in H3.
+unfold S_predicate in H3. destruct H3. destruct H3. destruct H3.
+specialize (proj2_sig b) as H4. simpl in H4.
+unfold S_predicate in H4. destruct H4. destruct H4. destruct H4.
+assert (embedding x2 < embedding x5).
+{ unfold lt in H2. simpl in H2. unfold condensation_order in H2.
+  specialize (H2 (embedding x2) (embedding x5)).
+  specialize (H2 (proj2_sig x2)). specialize (H2 (proj2_sig x5)).
+  assumption. }*)
+

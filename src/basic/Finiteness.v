@@ -7,4 +7,4 @@ Definition is_finite (X : LinearOrder) :=
 Definition is_infinite (X : LinearOrder) := ~ is_finite X.
 
 Definition card_gt (X : LinearOrder) (n : omega) :=
-  Embedding {w : omega, w < n} X.
+  exists _ : Embedding {w : omega, w < n+1} X, True.

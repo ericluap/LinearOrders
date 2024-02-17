@@ -168,3 +168,29 @@ destruct H.
 exists x.
 rewrite H. apply eq_reflexive.
 Qed.
+
+Theorem condensation_elem_same_condensation {T : LinearOrder} {P : CondensationRelation}
+(l : T/P) (a : condensation_elem_to_interval l) :
+(condensation_elem (P T) (embedding a) = l).
+Proof.
+specialize (proj2_sig a) as H. simpl in H.
+unfold condensation_elem. apply same_proj1. simpl.
+specialize (proj2_sig l) as H1. simpl in H1. destruct H1.
+simpl in H0.
+assert (forall z, proj1_sig l z = (actual_relation _ (P T) x z)).
+{ intros. rewrite H0. reflexivity. }
+rewrite H0.
+assert (actual_relation _ (P T) x (proj1_sig a)).
+{ specialize (H1 (proj1_sig a)). rewrite H1 in H. assumption. }
+apply functional_extensionality. intros.
+apply propositional_extensionality. split.
+{ intros. specialize (eq_transitive T (P T)) as H4.
+  unfold transitive in H4. specialize (H4 x (proj1_sig a) x0).
+  exact (H4 H2 H3). }
+{ intros. apply eq_symmetric. apply eq_symmetric in H3.
+  specialize (eq_transitive T (P T)) as H4. unfold transitive in H4.
+  specialize (H4 x0 x (proj1_sig a)).
+  exact (H4 H3 H2). }
+Qed.
+
+
