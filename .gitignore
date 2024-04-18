@@ -44,4 +44,10 @@ time-of-build-before.log
 time-of-build-both.log
 time-of-build-pretty.log
 
+/build
+/lake-packages/*
+/.cache
+/lakefile.olean
+/.lake/
+
 .DS_Store
