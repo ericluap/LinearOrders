@@ -64,6 +64,27 @@ theorem image_of_initial_initial : isInitial (f '' univ) := by
     use a
     trivial
 
+theorem image_of_initial_initial' {g : Set α} (hg : isInitial g) : isInitial (f '' g) := by
+  unfold isInitial at *
+  intros x hx y hy
+  rw [mem_image] at *
+  obtain ⟨w, hw⟩ := hx
+  cases hw with
+  | intro h1 h2 =>
+    rw [←h2] at hy
+    have h3 := (f.init' w y hy)
+    obtain ⟨a, ha⟩ := h3
+    use a
+    rw [←ha] at hy
+    have : a < w := by
+      have : f.toEmbedding a < f.toEmbedding w := by
+        simp at *
+        trivial
+      rw [f.map_rel_iff'] at this
+      trivial
+    constructor
+    exact (hg w h1 a this)
+    trivial
 /-
 Final embedding implies its image is final
 -/
@@ -78,6 +99,28 @@ theorem image_of_final_final : isFinal (g '' univ) := by
     have h3 := (g.final' w y hy)
     obtain ⟨a, ha⟩ := h3
     use a
+    trivial
+
+theorem image_of_final_final' {q : Set β} (hq : isFinal q) : isFinal (g '' q) := by
+  unfold isFinal at *
+  intros x hx y hy
+  rw [mem_image] at *
+  obtain ⟨w, hw⟩ := hx
+  cases hw with
+  | intro h1 h2 =>
+    rw [←h2] at hy
+    have h3 := (g.final' w y hy)
+    obtain ⟨a, ha⟩ := h3
+    use a
+    rw [←ha] at hy
+    have : w < a := by
+      have : g.toEmbedding w < g.toEmbedding a := by
+        simp at *
+        trivial
+      rw [g.map_rel_iff'] at this
+      trivial
+    constructor
+    exact (hq w h1 a this)
     trivial
 
 /-
