@@ -162,12 +162,8 @@ theorem comp_of_initial_final_inside (a b : Set α) (hin : isInitialInside a b)
 
 end Parts
 
-def map_back {j : Type} (f1 : γ → j) (f2 : e → j)
-    | Sum.inl a => f1 a
-    | Sum.inr a => f2 a
-
 theorem sum_refinement
-  (f : α ⊕ₗ β ≃o γ ⊕ₗ δ)
+  (f : α ⊕ₗ β ≃o γ ⊕ₗ δ) [Nonempty α]
 : ∃e : Type (max x w), [LinearOrder e] →
   (Nonempty (γ ⊕ₗ e ≃o α) ∧ Nonempty (e ⊕ₗ β ≃o δ)) ∨
   (Nonempty (α ⊕ₗ e ≃o γ) ∧ Nonempty (e ⊕ₗ δ ≃o β)) := by
@@ -179,4 +175,44 @@ theorem sum_refinement
   left
   constructor
   rw [←exists_true_iff_nonempty]
-  set q := map_back (λ g => f.invFun (Sum.inl g)) (f.invFun)
+  set q : γ ⊕ₗ this → α := λ g =>
+    match g with
+    | Sum.inl g => Sum.inl.invFun (f.invFun (Sum.inl g))
+    | Sum.inr g => Sum.inl.invFun (f.invFun g)
+    with q_def
+  have q_inj : Function.Injective q := by
+    unfold Function.Injective
+    intros a b hab
+    simp [q_def] at hab
+    rcases a with a | a
+    rcases b with b | b
+    simp at hab
+    have ha : f.invFun (Sum.inl a) ∈ left_part := by
+      unfold left_part
+      simp
+      unfold isInitialInside at h
+      rcases h with ⟨h1, h2⟩
+      rw [subset_def] at h1
+      have in_left : ((Sum.inl a) : γ ⊕ₗ δ) ∈ left_part := by
+        unfold left_part
+        simp
+      have in_image_left := h1 (Sum.inl a) in_left
+      unfold image_left at in_image_left
+      simp at in_image_left
+      rcases in_image_left with z | z
+      rcases z with ⟨q, ⟨hq1, hq2⟩⟩
+      use q
+      rw [←hq2]
+      simp
+      trivial
+      rcases z with ⟨q, ⟨hq1, hq2⟩⟩
+      unfold left_part at hq1
+      simp at hq1
+      rcases hq1 with ⟨y, hy⟩
+      injection hy
+    unfold left_part at ha
+    simp at ha
+    rcases ha with ⟨y, hy⟩
+    simp [←hy] at hab
+    sorry
+  sorry
