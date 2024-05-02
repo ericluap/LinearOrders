@@ -3,6 +3,7 @@ import Mathlib.Order.Hom.Basic
 import Mathlib.Order.InitialSeg
 import Mathlib.SetTheory.Cardinal.SchroederBernstein
 import Mathlib.Data.Finset.Basic
+import Lindenbaum.InitialFinal
 
 noncomputable section
 open Classical
@@ -10,202 +11,9 @@ open Set
 
 universe u v
 
-/-
-Define what a final embedding is and add coerceions
--/
-section FinalSeg
-variable {α : Type*} {β : Type*} {γ : Type*} {r : α → α → Prop} {s : β → β → Prop}
-  {t : γ → γ → Prop}
-
-structure FinalSeg {α β : Type*} (r : α → α → Prop) (s : β → β → Prop) extends r ↪r s where
-  final' : ∀ a b, s (toRelEmbedding a) b -> ∃ a', toRelEmbedding a' = b
-
-infixl:24 " ≼f " => FinalSeg
-
-instance : Coe (r ≼f s) (r ↪r s) :=
-  ⟨FinalSeg.toRelEmbedding⟩
-
-instance : FunLike (r ≼f s) α β where
-  coe f := f.toFun
-  coe_injective' := by
-    rintro ⟨f, hf⟩ ⟨g, hg⟩ h
-    congr with x
-    exact congr_fun h x
-
-instance : EmbeddingLike (r ≼f s) α β where
-  injective' f := f.inj'
-end FinalSeg
-
-variable {α : Type u} {β : Type v} [LinearOrder α] [LinearOrder β]
-
-variable
-  (f : (@LT.lt α _) ≼i (@LT.lt β _))
-  (g : (@LT.lt β _) ≼f (@LT.lt α _))
-
-/-
-Define what it means for a subset of a linear order to be an initial or final segment
--/
-def isInitial (s : Set α) := ∀x ∈ s, ∀y : α, y < x → y ∈ s
-def isFinal (s : Set α) := ∀x ∈ s, ∀y : α, y > x → y ∈ s
-
-/-
-Initial embedding implies its image is initial
--/
-theorem image_of_initial_initial : isInitial (f '' univ) := by
-  unfold isInitial
-  intros x hx y hy
-  rw [mem_image] at *
-  obtain ⟨w, hw⟩ := hx
-  cases hw with
-  | intro h1 h2 =>
-    rw [←h2] at hy
-    have h3 := (f.init' w y hy)
-    obtain ⟨a, ha⟩ := h3
-    use a
-    trivial
-
-theorem image_of_initial_initial' {g : Set α} (hg : isInitial g) : isInitial (f '' g) := by
-  unfold isInitial at *
-  intros x hx y hy
-  rw [mem_image] at *
-  obtain ⟨w, hw⟩ := hx
-  cases hw with
-  | intro h1 h2 =>
-    rw [←h2] at hy
-    have h3 := (f.init' w y hy)
-    obtain ⟨a, ha⟩ := h3
-    use a
-    rw [←ha] at hy
-    have : a < w := by
-      have : f.toEmbedding a < f.toEmbedding w := by
-        simp at *
-        trivial
-      rw [f.map_rel_iff'] at this
-      trivial
-    constructor
-    exact (hg w h1 a this)
-    trivial
-/-
-Final embedding implies its image is final
--/
-theorem image_of_final_final : isFinal (g '' univ) := by
-  unfold isFinal
-  intros x hx y hy
-  rw [mem_image] at *
-  obtain ⟨w, hw⟩ := hx
-  cases hw with
-  | intro h1 h2 =>
-    rw [←h2] at hy
-    have h3 := (g.final' w y hy)
-    obtain ⟨a, ha⟩ := h3
-    use a
-    trivial
-
-theorem image_of_final_final' {q : Set β} (hq : isFinal q) : isFinal (g '' q) := by
-  unfold isFinal at *
-  intros x hx y hy
-  rw [mem_image] at *
-  obtain ⟨w, hw⟩ := hx
-  cases hw with
-  | intro h1 h2 =>
-    rw [←h2] at hy
-    have h3 := (g.final' w y hy)
-    obtain ⟨a, ha⟩ := h3
-    use a
-    rw [←ha] at hy
-    have : w < a := by
-      have : g.toEmbedding w < g.toEmbedding a := by
-        simp at *
-        trivial
-      rw [g.map_rel_iff'] at this
-      trivial
-    constructor
-    exact (hq w h1 a this)
-    trivial
-
-/-
-Initial embedding maps an initial segment to an initial segment
--/
-theorem initial_maps_initial_initial {s : Set α} (hs : isInitial s) : isInitial (f '' s) := by
-  unfold isInitial at *
-  intros x hx y hy
-  rw [mem_image] at *
-  obtain ⟨w, hw⟩ := hx
-  obtain ⟨w_in_s, fw_x⟩ := hw
-  rw [←fw_x] at hy
-  have hf := (f.init' w y hy)
-  obtain ⟨z, hz⟩ := hf
-  simp at *
-  rw [←hz] at hy
-  have ord : z < w := by
-    rw [←f.map_rel_iff']
-    trivial
-  use z
-  constructor
-  exact (hs w w_in_s z ord)
-  trivial
-
-/-
-Final embedding maps a final segment to a final segment
--/
-theorem final_maps_final_final {s : Set β} (hs : isFinal s) : isFinal (g '' s) := by
-  unfold isFinal at *
-  intros x hx y hy
-  rw [mem_image] at *
-  obtain ⟨w, hw⟩ := hx
-  obtain ⟨w_in_s, fw_x⟩ := hw
-  rw [←fw_x] at hy
-  have hf := (g.final' w y hy)
-  obtain ⟨z, hz⟩ := hf
-  simp at *
-  rw [←hz] at hy
-  have ord : w < z := by
-    rw [←g.map_rel_iff']
-    trivial
-  use z
-  constructor
-  exact (hs w w_in_s z ord)
-  trivial
-
-/-
-Complement of initial segment is final
--/
-theorem comp_initial_final {s : Set α} (hs : isInitial s) : isFinal (univ \ s) := by
-  unfold isFinal
-  intros x hx y hy
-  unfold isInitial at hs
-  apply byContradiction
-  intros hny
-  simp at *
-  have contra := hs y hny x hy
-  trivial
-
-/-
-Complement of final segment is initial
--/
-theorem comp_final_initial {s : Set α} (hs : isFinal s) : isInitial (univ \ s) := by
-  unfold isInitial
-  intros x hx y hy
-  unfold isFinal at hs
-  apply byContradiction
-  intros hny
-  simp at *
-  have contra := hs y hny x hy
-  trivial
-
-/-
-The union of initial segments is an initial segment
--/
-theorem union_initial_initial [LinearOrder α]
-  (f : ℕ → Set α) (hf : ∀ n : ℕ, isInitial (f n)) : isInitial (⋃ n, f n) := by
-  unfold isInitial
-  intros x hx y hy
-  rw [mem_iUnion]
-  rw [mem_iUnion] at hx
-  obtain ⟨w, hw⟩ := hx
-  use w
-  exact (hf w) x hw y hy
-
+variable {α : Type u} {β : Type v}
+  [LinearOrder α] [LinearOrder β]
+  (f : α ≼i β) (g : β ≼f α)
 /-
 Modification of the proof of Schroder-Bernstein from Mathematics in Lean book
 -/
@@ -233,7 +41,7 @@ theorem sbAux_initial : ∀ n : ℕ, isInitial (sbAux f g n) := by
   intros n
   induction' n with n hn
   unfold sbAux
-  have g_image_final : isFinal (g '' univ) := by apply image_of_final_final
+  have g_image_final : isFinal (g '' univ) := by apply image_of_univ_final
   apply comp_final_initial
   trivial
   unfold sbAux
@@ -519,8 +327,8 @@ then α is order isomorphic to β (aka the type of order isomorphisms is nonempt
 -/
 theorem lindenbaum {α : Type u} {β : Type v}
   [LinearOrder α] [LinearOrder β]
-  (f : (@LT.lt α _) ≼i (@LT.lt β _))
-  (g : (@LT.lt β _) ≼f (@LT.lt α _))
+  (f : α ≼i β)
+  (g : β ≼f α)
 : Nonempty (α ≃o β) := by
   cases' isEmpty_or_nonempty β with hβ hβ
   · have : IsEmpty α := Function.isEmpty f
