@@ -1,0 +1,221 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage[colorlinks=true]{hyperref}
+
+\newcommand\newlink[2]{{\protect\hyperlink{#1}{\normalcolor #2}}}
+\makeatletter
+\newcommand\newtarget[2]{\Hy@raisedlink{\hypertarget{#1}{}}#2}
+\makeatother
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+
+% mathbb
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\PPP}{\mathbb{P}}
+
+% algebra
+\newcommand{\Zmod}[1]{\mathbb{Z}/#1\mathbb{Z}}
+\newcommand{\iso}{\cong}
+\newcommand{\Hom}{\text{Hom}}
+\newcommand{\id}{\text{id}}
+\newcommand{\tensor}{\otimes}
+\newcommand{\Ext}{\text{Ext}}
+\newcommand{\Tor}{\text{Tor}}
+\newcommand{\im}{\text{im}}
+
+% mathcal
+\newcommand{\BB}{\mathcal{B}}
+\newcommand{\CC}{\mathcal{C}}
+\newcommand{\DD}{\mathcal{D}}
+\newcommand{\FF}{\mathcal{F}}
+\newcommand{\GG}{\mathcal{G}}
+\newcommand{\HH}{\mathcal{H}}
+\newcommand{\II}{\mathcal{I}}
+\newcommand{\JJ}{\mathcal{J}}
+\newcommand{\LL}{\mathcal{L}}
+\newcommand{\MM}{\mathcal{M}}
+\newcommand{\NN}{\mathcal{N}}
+\newcommand{\PP}{\mathcal{P}}
+\newcommand{\RR}{\mathcal{R}}
+\newcommand{\TT}{\mathcal{T}}
+\newcommand{\XX}{\mathcal{X}}
+
+% model theory
+\newcommand{\proves}{\vdash}
+
+\title{Formalized Linear Orders}
+\author{Eric Paul}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{Linear Order Definition}
+\newcommand\LE{\newlink{def:LE}{\text{LE}}}
+\begin{definition}[$\LE$]
+A type is an instance of $\newtarget{def:LE}{\LE}$ if it has a binary relation $\le$.
+\end{definition}
+
+\newcommand\LT{\newlink{def:LT}{\text{LT}}}
+\begin{definition}[$\LT$]
+A type is an instance of $\newtarget{def:LT}{\LT}$ if it has a binary relation $<$.
+\end{definition}
+
+\newcommand\Preorder{\newlink{def:Preorder}{\text{Preorder}}}
+\begin{definition}[$\Preorder$]
+A type $\alpha$ is an instance of $\newtarget{def:Preorder}{\Preorder}$ if it extends $\LE$ and $\LT$ and satisfies the following properties:
+\begin{itemize}
+\item Reflexivity: $\forall a : \alpha, a \le a$
+\item Transitivity: $\forall a,b,c : \alpha, a\le b \to b\le c \to a\le c$
+\item Relationship between $<$ and $\le$: $\forall a,b : \alpha, a < b \iff a\le b \land \neg b \le a$
+\end{itemize}
+\end{definition}
+
+\newcommand\PartialOrder{\newlink{def:PartialOrder}{\text{PartialOrder}}}
+\begin{definition}[$\PartialOrder$]
+A type $\alpha$ is an instance of $\newtarget{def:PartialOrder}{\PartialOrder}$ if it extends $\Preorder$ and satisfies the following property:
+\begin{itemize}
+\item Antisymmetry: $\forall a,b : \alpha, a\le b \to b\le a \to a = b$
+\end{itemize}
+\end{definition}
+
+\newcommand\LinearOrder{\newlink{def:LinearOrder}{\text{LinearOrder}}}
+\begin{definition}[$\LinearOrder$]
+A type $\alpha$ is an instance of $\newtarget{def:LinearOrder}{\LinearOrder}$ if it extends $\PartialOrder$ and satisfies the following property:
+\begin{itemize}
+\item Total: $\forall a,b : \alpha, a\le b \lor b\le a$
+\end{itemize}
+\end{definition}
+
+\section*{Initial and Final}
+\newcommand\Embedding[2]{\newlink{def:Embedding}{\text{Embedding } #1 \text{ } #2}}
+\begin{definition}[$\Embedding{\alpha}{\beta}$]
+An element of type $\newtarget{def:Embedding}{\Embedding{\alpha}{\beta}}$ has the following:
+\begin{itemize}
+\item A function from $\alpha$ to $\beta$
+\item A proof that the function is injective
+\end{itemize}
+\end{definition}
+
+\newcommand\RelEmbedding[4]{\newlink{def:RelEmbedding}{\text{RelEmbedding } #1 \text{ } #2 \; #3 \; #4}}
+\begin{definition}[$\RelEmbedding{\alpha}{\beta}{r}{s}$]
+An element of type $\newtarget{def:RelEmbedding}{\RelEmbedding{\alpha}{\beta}{r}{s}}$ extends $\Embedding{\alpha}{\beta}$ and satisfies the following:
+\begin{itemize}
+\item Order preserving: $\forall a,b : \alpha, s \  (f a) \ (f b) \iff r\  a\  b$
+(where $f$ is the function from $\Embedding{\alpha}{\beta}$ and $s$ and $r$ are binary relations)
+\end{itemize}
+\end{definition}
+
+\newcommand\InitialSeg[2]{\newlink{def:InitialSeg}{#1 \preccurlyeq\! i\; #2}}
+\begin{definition}[$\InitialSeg{\alpha}{\beta}$]
+An element $f$ of type $\newtarget{def:InitialSeg}{\InitialSeg{\alpha}{\beta}}$ extends $\RelEmbedding{\alpha}{\beta}{\le_\alpha}{\le_\beta}$ (where $\alpha$ and $\beta$ are instances of $\LinearOrder$ and each $\le$ is the corresponding one for the linear order) and satisfies the following:
+\begin{itemize}
+\item Is initial: $\forall a : \alpha,\forall b : \beta, b \le fa \to \exists a' : \alpha, fa' = b$ (where $f$ is the function from $\Embedding{\alpha}{\beta}$)
+\end{itemize}
+\end{definition}
+
+\newcommand\FinalSeg[2]{\newlink{def:FinalSeg}{#1 \preccurlyeq\! f\; #2}}
+\begin{definition}[$\FinalSeg{\alpha}{\beta}$]
+An element $f$ of type $\newtarget{def:FinalSeg}{\FinalSeg{\alpha}{\beta}}$ extends $\RelEmbedding{\alpha}{\beta}{\le_\alpha}{\le_\beta}$ (where $\alpha$ and $\beta$ are instances of $\LinearOrder$ and each $\le$ is the corresponding one for the linear order) and satisfies the following:
+\begin{itemize}
+\item Is final: $\forall a : \alpha, \forall b : \beta, fa \le b \to \exists a', fa' = b$ (where $f$ is the function from $\Embedding{\alpha}{\beta}$
+\end{itemize}
+\end{definition}
+
+\newcommand\isInitial[1]{\newlink{def:isInitial}{\text{isInitial } #1}}
+\begin{definition}[$\isInitial{s}$]
+The meaning of $\newtarget{def:isInitial}{\isInitial{s}}$ is that $s$ is a subset of the elements of $\alpha$ where $\alpha$ is an instance of $\LinearOrder$ and that
+\[
+\forall x \in s, \forall y : \alpha, y < x \to y \in s
+\]
+\end{definition}
+
+\newcommand\isFinal[1]{\newlink{def:isFinal}{\text{isFinal } #1}}
+\begin{definition}[$\isFinal{s}$]
+The meaning of $\newtarget{def:isFinal}{\isFinal{s}}$ is that $s$ a subset of the elements of $\alpha$ where $\alpha$ is an instance of $\LinearOrder$ and that
+\[
+\forall x \in s, \forall y : \alpha, y > x \to y \in s
+\]
+\end{definition}
+
+\newcommand\aalpha{\newlink{def:aalpha}{\alpha}}
+\newcommand\bbeta{\newlink{def:bbeta}{\beta}}
+\newcommand\tf{\newlink{def:ff}{f}}
+\newcommand\tg{\newlink{def:gg}{g}}
+\textbf{Variable Definitions}\\
+For the rest of this section, we let $\newtarget{def:aalpha}{\aalpha}$ and $\newtarget{def:bbeta}{\bbeta}$ be types with instances of $\LinearOrder$.
+We let $\newtarget{def:ff}{\tf}$ be an element of type $\InitialSeg{\alpha}{\beta}$ and we let $\newtarget{def:gg}{\tg}$ be an element of type $\FinalSeg{\beta}{\alpha}$.
+
+\begin{theorem}[Initial Maps Initial Initial]
+\label{initial_maps_initial_initial}
+Let $s$ be a subset of $\aalpha$ such that $\isInitial{s}$. Then we have that $\isInitial{\tf[s]}$.
+\end{theorem}
+\begin{proof}
+Our goal is to prove that $\isInitial{\tf[s]}$. By the definition of $\isInitial{\tf[s]}$, this means that we have to show that for all $x\in \tf[s]$, for all $y < x$, we have that $y\in \tf[s]$. So let $x\in \tf[s]$ and let $y < x$. Since $x\in \tf[s]$, there exists a $w\in s$ such that $\tf(w) = s$. Since $y < \tf(w)$, then since $\tf$ is of type $\InitialSeg{\aalpha}{\bbeta}$, there exists a $z : \aalpha$ such that $\tf(z) = y$.
+
+So we now have that $\tf(z) < \tf(w)$. Since $\tf$ extends $\RelEmbedding{\aalpha}{\bbeta}{\le_\aalpha}{\le_\bbeta}$, this implies that $\tf$ is order preserving and so we have that $z < w$. Since $w\in s$ and $z < w$, we have by the definition of $\isInitial{s}$ that $z \in s$. Thus, we have found a $z\in s$ such that $\tf(z) = y$. Therefore, $y\in \tf[s]$.
+\end{proof}
+
+\begin{theorem}[Image of Univ Initial]
+\label{image_of_univ_initial}
+We have that $\isInitial{\tf[\aalpha]}$.
+\end{theorem}
+\begin{proof}
+Our goal is to prove that $\isInitial{\tf[\aalpha]}$. By Theorem \ref{initial_maps_initial_initial}, it is sufficient to show that $\isInitial{\aalpha}$. By the definition of $\isInitial{\aalpha}$ our goal is to show that for all $x\in \aalpha$, for all $y : \aalpha $ such that $y < x$, we have that $y : \aalpha$. Since we already know that $y\in \aalpha$ we are done.
+\end{proof}
+
+\begin{theorem}[Final Maps Final Final]
+\label{final_maps_final_final}
+Let $s$ be a subset of $\aalpha$ such that $\isFinal{s}$. Then we have that $\isFinal{\tf[s]}$.
+\end{theorem}
+\begin{proof}
+Dual of Theorem \ref{initial_maps_initial_initial}
+\end{proof}
+
+\begin{theorem}[Image of Univ Final]
+\label{image_of_univ_final}
+We have that $\isFinal{\tg[\bbeta]}$.
+\end{theorem}
+\begin{proof}
+Dual of Theorem \ref{image_of_univ_initial}.
+\end{proof}
+
+\begin{theorem}[Comp Initial Final]
+\label{comp_initial_final}
+Let $s$ be a subset of $\aalpha$ such that $\isInitial{s}$. Then $\isFinal{\aalpha\setminus s}$.
+\end{theorem}
+\begin{proof}
+By the definition of $\isFinal{\aalpha\setminus s}$, we need to show that for all $x \in \aalpha \setminus s$, for all $y : \aalpha$ such that $y > x$, $y\in \aalpha \setminus s$. So let $x : \aalpha$ such that $x \in \aalpha\setminus s$ and let $y : \aalpha$ such that $y > x$. We need to show that $y\in \aalpha \setminus s$.
+
+Assume for the sake of contradiction that $y\not\in \aalpha\setminus s$. Since $y\not\in \aalpha\setminus s$, we have that $y\in s$. Since $y > x$, we have that $x < y$. So by the definition of $\isInitial{s}$, since $y\in s$ and $x < y$, we have that $x\in s$. But we also know that $x\in \aalpha\setminus s$ and so $x\not\in s$. So we have that $x\in s$ and $x\not\in s$. This is a contradiction.
+\end{proof}
+
+\begin{theorem}[Comp Final Initial]
+\label{comp_final_initial}
+Let $s$ be a subset of $\aalpha$ such that $\isFinal{s}$. Then $\isInitial{\aalpha\setminus s}$.
+\end{theorem}
+\begin{proof}
+Dual of Theorem \ref{comp_initial_final}.
+\end{proof}
+
+\begin{theorem}[Union Initial Initial]
+\label{union_initial_initial}
+Let $h$ be a function from $\N$ to subsets of $\aalpha$ such that for all $n : \N$, $\isInitial{h(n)}$. Then we have that $\isInitial{\bigcup_{n\in \N} h(n)}$.
+\end{theorem}
+\begin{proof}
+Let $x\in \bigcup_{n\in \N} h(n)$ and let $y < x$. Then, by the definition of $\isInitial{\bigcup_{n\in \N} h(n)}$, it is now our goal to prove that $y\in \bigcup_{n\in \N} h(n)$. This is equivalent to showing that there exists an $i\in \N$ such that $y \in h(i)$. Furthermore, since we know that $x\in \bigcup_{n\in \N} h(n)$, we know that there exists a $w\in \N$ such that $x\in h(w)$.
+
+We now claim that $y \in h(w)$. Since for all $n\in \N$, $\isInitial{h(n)}$, we have that $\isInitial{h(w)}$. So since $x\in h(w)$ and $y < x$, then by the definition of $\isInitial{h(w)}$, we have that $y\in h(w)$. Thus, we have shown that there exists an $i\in \N$ such that $y\in h(i)$.
+\end{proof}
+\end{document}

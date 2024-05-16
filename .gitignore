@@ -50,4 +50,11 @@ time-of-build-pretty.log
 /lakefile.olean
 /.lake/
 
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+
 .DS_Store
