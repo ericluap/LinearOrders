@@ -19,7 +19,7 @@ open Set.Notation
 universe u v w
 
 variable {α : Type u} {β : Type v} {γ : Type w} {δ : Type u}
-  [LinearOrder α] [LinearOrder β] [LinearOrder γ]
+  [LinearOrder α] [LinearOrder β] [LinearOrder γ] [LinearOrder δ]
 
 theorem make_iso {f : α → β} (hinj : Function.Injective f) (hsurj : Function.Surjective f)
  (hord : ∀{a b : α}, f a ≤ f b ↔ a ≤ b) : Nonempty (α ≃o β) := by
@@ -166,7 +166,7 @@ theorem swap_equal_left {a b : Set α} (eq : a = b) :
   (a ⊕ₗ β) = (b ⊕ₗ β) := by
   rw [eq]
 
-theorem swap_iso_right (f : β ≃o γ) :
+theorem change_iso_right (f : β ≃o γ) :
 Nonempty (α ⊕ₗ β ≃o α ⊕ₗ γ) := by
   set g : α ⊕ₗ β → α ⊕ₗ γ := λ g =>
     match g with
@@ -245,7 +245,7 @@ Nonempty (α ⊕ₗ β ≃o α ⊕ₗ γ) := by
     trivial
   exact make_iso ginj gsurj gord
 
-theorem swap_iso_left (f : α ≃o γ) :
+theorem change_iso_left (f : α ≃o γ) :
 Nonempty (α ⊕ₗ β ≃o γ ⊕ₗ β) := by
   set g : α ⊕ₗ β → γ ⊕ₗ β := λ g =>
     match g with
@@ -327,3 +327,19 @@ Nonempty (α ⊕ₗ β ≃o γ ⊕ₗ β) := by
     rw [Sum.Lex.inr_le_inr_iff] at this
     trivial
   exact make_iso ginj gsurj gord
+
+theorem swap_iso_right (f : β ≃o δ) (h : α ⊕ₗ β ≃o γ) :
+Nonempty (α ⊕ₗ δ ≃o γ) := by
+  have : Nonempty (α ⊕ₗ β ≃o α ⊕ₗ δ) := change_iso_right f
+  rcases this with ⟨this⟩
+  have := this.symm.trans h
+  apply nonempty_of_exists
+  use this
+
+theorem swap_iso_left (f : α ≃o δ) (h : α ⊕ₗ β ≃o γ) :
+Nonempty (δ ⊕ₗ β ≃o γ) := by
+  have : Nonempty (α ⊕ₗ β ≃o δ ⊕ₗ β) := change_iso_left f
+  rcases this with ⟨this⟩
+  have := this.symm.trans h
+  apply nonempty_of_exists
+  use this
