@@ -16,9 +16,9 @@ open Classical
 open Set
 open Set.Notation
 
-universe u v w
+universe u v w x
 
-variable {α : Type u} {β : Type v} {γ : Type w} {δ : Type u}
+variable {α : Type u} {β : Type v} {γ : Type w} {δ : Type x}
   [LinearOrder α] [LinearOrder β] [LinearOrder γ] [LinearOrder δ]
 
 theorem make_iso {f : α → β} (hinj : Function.Injective f) (hsurj : Function.Surjective f)
@@ -34,6 +34,19 @@ theorem make_iso {f : α → β} (hinj : Function.Injective f) (hsurj : Function
   have orderbij : α ≃o β := ⟨g, gord⟩
   apply nonempty_of_exists
   use orderbij
+
+theorem nonempty_nonempty_iso_trans : Nonempty (α ≃o β) -> Nonempty (β ≃o γ) -> Nonempty (α ≃o γ) := by
+  intros x y
+  rcases x with ⟨x⟩
+  rcases y with ⟨y⟩
+  apply nonempty_of_exists
+  use (x.trans y)
+
+theorem nonempty_iso_trans : Nonempty (α ≃o β) -> β ≃o γ -> Nonempty (α ≃o γ) := by
+  intros x y
+  rcases x with ⟨x⟩
+  apply nonempty_of_exists
+  use (x.trans y)
 
 theorem iso_to_image (f : α ↪o β) (a : Set α) :
   Nonempty (a ≃o f '' a) := by

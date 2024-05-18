@@ -69,6 +69,19 @@ theorem not_right_in_left {x : α ⊕ₗ β} : x ∉ right_part → x ∈ left_p
   · intros hx
     contradiction
 
+theorem left_compl_right : left_partᶜ = (right_part : Set (α ⊕ₗ β)) := by
+  simp [compl_def]
+  apply Set.Subset.antisymm
+  rw [subset_def]
+  intros x hx
+  simp at hx
+  exact not_left_in_right hx
+  rw [subset_def]
+  intros x hx
+  simp
+  apply in_right_not_left
+  trivial
+
 theorem left_initial : isInitial (@left_part α β) := by
   unfold isInitial
   intros x hx y hy
@@ -134,7 +147,7 @@ theorem in_image_left_or_right (x : γ) : (x ∈ image_left f ∧ x ∉ image_ri
   simp
   intros z
   rcases z with z | z
-  rcases z with ⟨w, hw1, hw2⟩
+  rcases z with ⟨w, hw1, _⟩
   unfold right_part at hw1
   simp at hw1
   rcases hw1 with ⟨q, hq⟩
@@ -393,6 +406,18 @@ theorem left_iso_image_left : Nonempty (α ≃o image_left f) := by
   apply nonempty_of_exists
   use iso_trans
 
+theorem right_iso_image_right : Nonempty (β ≃o image_right f) := by
+  rcases (iso_to_image (f.toRelEmbedding) right_part) with ⟨z⟩
+  simp at z
+  have : image_right f = f '' right_part := by
+    unfold image_right
+    trivial
+  rw [←this] at z
+  rcases (right_part_iso : Nonempty (β ≃o (right_part : Set (α ⊕ₗ β)))) with ⟨a⟩
+  have iso_trans : β ≃o image_right f := a.trans z
+  apply nonempty_of_exists
+  use iso_trans
+
 end Parts
 
 theorem small_left_plus_compl {a b : Set α} :
@@ -424,97 +449,152 @@ Nonempty (↑(b ↓∩ a)ᶜ ≃o ↑(b \ a)) := by
     trivial
   exact make_iso qinj qsurj qord
 
+theorem initial_inside_sum_iso {a b : Set α}
+(hab : isInitialInside b a) : Nonempty (b ⊕ₗ ↑(a \ b) ≃o a) := by
+  rcases hab with ⟨b_sub_a, b_initial_a⟩
+  rcases (initial_plus_final b_initial_a) with ⟨iso⟩
+  rcases (subset_cap_iso b_sub_a) with ⟨iso2⟩
+  rcases (swap_iso_left iso2 iso) with ⟨iso⟩
+  rcases (small_left_plus_compl : Nonempty (↑(a ↓∩ b)ᶜ ≃o ↑(a \ b))) with ⟨iso2⟩
+  rcases (swap_iso_right iso2 iso) with ⟨iso⟩
+  apply nonempty_of_exists
+  exists iso
+
+theorem initial_compl_initial {a b : Set α}
+(ha : isInitial a) : isInitial (bᶜ ↓∩ ↑(a \ b)) := by
+  unfold isInitial
+  intros x hx y hy
+  simp at *
+  exact (ha x hx y hy)
+
+lemma setminus_not_in {x : α} {a b : Set α} (hnb : x ∈ bᶜ) (hnab : x ∉ a \ b) :
+x ∉ a := by
+  simp at *
+  by_contra z
+  exact hnb (hnab z)
+
+theorem subset_compl_compl {a b : Set α}
+(b_subset_a : b ⊆ a) : Nonempty (↑(bᶜ ↓∩ a \ b)ᶜ ≃o ↑aᶜ) := by
+  set q : ↑(bᶜ ↓∩ a \ b)ᶜ → ↑aᶜ := λg => by
+    have := g.property
+    simp at this
+    exact ⟨g.val, this⟩
+    with q_def
+  have qinj : Function.Injective q := by
+    unfold Function.Injective
+    intros x y hxy
+    simp [q_def] at hxy
+    apply Subtype.eq
+    apply Subtype.eq
+    trivial
+  have qsurj : Function.Surjective q := by
+    unfold Function.Surjective
+    intros x
+    have x_not_in_a := x.property
+    have a_comp_sub_b_comp : aᶜ ⊆ bᶜ := by
+      rw [compl_subset_compl]
+      trivial
+    have x_not_in_b : ↑x ∈ bᶜ := by
+      exact a_comp_sub_b_comp x_not_in_a
+    set j : {x // x ∈ bᶜ} := ⟨↑x, x_not_in_b⟩
+    have j_in : j ∈ (bᶜ ↓∩ a \ b)ᶜ := by
+      simp
+      trivial
+    use ⟨j, j_in⟩
+  have qord : ∀{x y : ↑(bᶜ ↓∩ a \ b)ᶜ}, (q x ≤ q y) ↔ x ≤ y := by
+    intros x y
+    constructor
+    · intros hxy
+      simp [q_def] at hxy
+      trivial
+    · intros hxy
+      simp [q_def]
+      trivial
+  exact make_iso qinj qsurj qord
+
+theorem initial_inside_sum_compl_iso {a b : Set α}
+(ha : isInitial a) (b_sub_a : b ⊆ a) : Nonempty (↑(a \ b) ⊕ₗ ↑aᶜ ≃o ↑bᶜ) := by
+  have a_minus_b_subset : a \ b ⊆ bᶜ := by
+    simp [subset_def]
+  have a_minus_b_initial : isInitial (bᶜ ↓∩ ↑(a \ b)) := initial_compl_initial ha
+  rcases (initial_plus_final a_minus_b_initial) with ⟨iso⟩
+  rcases (subset_cap_iso a_minus_b_subset) with ⟨iso2⟩
+  rcases (swap_iso_left iso2 iso) with ⟨iso⟩
+  rcases (subset_compl_compl b_sub_a) with ⟨iso2⟩
+  rcases (swap_iso_right iso2 iso) with ⟨iso⟩
+  apply nonempty_of_exists
+  use iso
+
 theorem sum_refinement
-  (f : α ⊕ₗ β ≃o γ ⊕ₗ δ) [Nonempty α]
+  (f : α ⊕ₗ β ≃o γ ⊕ₗ δ)
 : ∃e : Type (max w x), ∃s : LinearOrder e,
   (Nonempty (γ ⊕ₗ e ≃o α) ∧ Nonempty (e ⊕ₗ β ≃o δ)) ∨
   (Nonempty (α ⊕ₗ e ≃o γ) ∧ Nonempty (e ⊕ₗ δ ≃o β)) := by
   have := image_image_initial left_part (image_left f) left_initial (image_left_initial f)
   rcases this with h | h
-  set e := (image_left f) \ left_part with e_def
-  use e, Subtype.instLinearOrder e
-  left
-  ·
+  · set e := (image_left f) \ left_part with e_def
+    use e, Subtype.instLinearOrder e
+    left
     have first_part : Nonempty (γ ⊕ₗ e ≃o α) := by
       rw [←exists_true_iff_nonempty]
-      have left_part_initial_image : isInitial ((image_left f) ↓∩ left_part) := by
-        apply initial_in_subset
-        exact left_initial
-      have : Nonempty ((↑(image_left f ↓∩ left_part) ⊕ₗ ↑(image_left f ↓∩ left_part)ᶜ) ≃o ↑(image_left f))
-        := initial_plus_final left_part_initial_image
-      rw [←exists_true_iff_nonempty] at this
-      rcases this with ⟨z,_⟩
-      have domain_iso_image : Nonempty (α ≃o image_left f) := left_iso_image_left f
-      rcases domain_iso_image with ⟨w⟩
-      have w : image_left f ≃o α := OrderIso.symm w
-      have z : (↑(image_left f ↓∩ left_part) ⊕ₗ ↑(image_left f ↓∩ left_part)ᶜ) ≃o α := z.trans w
-      unfold isInitialInside at h
-      rcases h with ⟨left_subset_image, left_rest_initial⟩
-      rcases (subset_cap_iso left_subset_image) with ⟨j⟩
+      rcases (initial_inside_sum_iso h) with ⟨iso⟩
+      rw [←e_def] at iso
+      rcases (left_iso_image_left f) with ⟨w⟩
       rcases (left_part_iso : Nonempty (γ ≃o (left_part : Set (γ ⊕ₗ δ)))) with ⟨q⟩
-      have z_temp : Nonempty (left_part ⊕ₗ ↑(image_left f ↓∩ left_part)ᶜ ≃o α) := swap_iso_left j z
-      rcases z_temp with ⟨z⟩
-      have right_equal : Nonempty (↑(image_left f ↓∩ left_part)ᶜ ≃o ↑e) := small_left_plus_compl
-      rcases right_equal with ⟨right_equal⟩
-      have z_temp : Nonempty (↑left_part ⊕ₗ ↑e ≃o α) := swap_iso_right right_equal z
-      rcases z_temp with ⟨z⟩
-      have z_swapped3 :
-        Nonempty ((left_part : Set (γ ⊕ₗ δ)) ⊕ₗ e ≃o γ ⊕ₗ e) := change_iso_left q.symm
-      rcases z_swapped3 with ⟨z_swapped3⟩
-      have z := z_swapped3.symm.trans z
-      use z
+      rcases (nonempty_iso_trans (swap_iso_left q.symm iso) w.symm) with ⟨iso⟩
+      use iso
     have second_part : Nonempty (e ⊕ₗ β ≃o δ) := by
-      have e_initial_in_delta : isInitial (right_part ↓∩ e) := by
-        unfold isInitial
-        intros x hx y hy
-        simp
-        have x_in_image : ↑x ∈ (image_left f) := by
-          simp at hx
-          simp [e_def] at hx
-          rcases hx with ⟨in_image, _⟩
-          exact in_image
-        have y_in_image : ↑y ∈ (image_left f) := image_left_initial f x x_in_image y hy
-        by_contra hne
-        simp [e_def] at hne
-        have h_in_left := hne y_in_image
-        have := in_left_not_right y.val h_in_left y.property
-        contradiction
-      have z : Nonempty ((right_part ↓∩ e) ⊕ₗ ↑(right_part ↓∩ e)ᶜ ≃o right_part)
-        := initial_plus_final e_initial_in_delta
-      rcases z with ⟨z⟩
-      have right_iso_delta : Nonempty (δ ≃o ↑right_part) := @right_part_iso γ δ _ _
-      rcases right_iso_delta with ⟨right_iso_delta⟩
-      have z := z.trans (right_iso_delta.symm)
-      have e_subset_right : e ⊆ right_part := by
-        simp [e_def, subset_def]
-        constructor
-        · intros x hx hnl
-          apply (not_left_in_right) at hnl
-          trivial
-        · intros x hx hnl
-          apply not_left_in_right at hnl
-          trivial
-      have e_cap_iso := subset_cap_iso e_subset_right
-      rcases e_cap_iso with ⟨e_cap_iso⟩
-      have z_swap : Nonempty ((right_part ↓∩ e) ⊕ₗ ↑(right_part ↓∩ e)ᶜ ≃o e ⊕ₗ ↑(right_part ↓∩ e)ᶜ)
-        := change_iso_left e_cap_iso
-      rcases z_swap with ⟨z_swap⟩
-      have z := z_swap.symm.trans z
-      have e_compl : Nonempty (↑(right_part ↓∩ e)ᶜ ≃o ↑(right_part \ e)) := small_left_plus_compl
-      rcases e_compl with ⟨e_compl⟩
-      have z_temp := swap_iso_right e_compl z
-      rcases z_temp with ⟨z⟩
-      have : (image_left f)ᶜ = (right_part : Set (γ ⊕ₗ δ))\ e := by
-        simp [compl_def]
-        apply Set.Subset.antisymm
-        simp [subset_def]
-        constructor
-        · intros x hx
-          have : toLex (Sum.inl x : (γ ⊕ₗ δ)) = Sum.inl x := by exact rfl
-          rw [this] at hx
-          constructor
-          · rw [this]
-            have := not_in_image_left_right f hx
-            by_contra q
-            unfold right_part at q
-            unfold image_right at this
+      rcases h with ⟨left_subset_image, _⟩
+      rcases (initial_inside_sum_compl_iso (image_left_initial f) left_subset_image)
+        with ⟨iso⟩
+      rcases (equal_iso e_def) with ⟨iso2⟩
+      rcases (swap_iso_left iso2.symm iso) with ⟨iso⟩
+      rcases (equal_iso (image_left_compl_image_right f)) with ⟨iso2⟩
+      rcases (swap_iso_right iso2 iso) with ⟨iso⟩
+      rcases (right_iso_image_right f) with ⟨iso2⟩
+      rcases (swap_iso_right iso2.symm iso) with ⟨iso⟩
+      rcases (equal_iso (left_compl_right : (left_partᶜ = (right_part : Set (γ ⊕ₗ δ)))))
+        with ⟨iso2⟩
+      have iso := iso.trans iso2
+      rcases (right_part_iso : Nonempty (δ ≃o ↑(right_part : Set (γ ⊕ₗ δ))))
+        with ⟨iso2⟩
+      have iso := iso.trans iso2.symm
+      apply nonempty_of_exists
+      use iso
+    constructor
+    trivial
+    trivial
+  · set e := left_part \ (image_left f) with e_def
+    use e, Subtype.instLinearOrder e
+    right
+    have first_part : Nonempty (α ⊕ₗ e ≃o γ) := by
+      rcases (initial_inside_sum_iso h) with ⟨iso⟩
+      rcases (left_iso_image_left f) with ⟨iso2⟩
+      rcases (swap_iso_left iso2.symm iso) with ⟨iso⟩
+      rcases (left_part_iso : Nonempty (γ ≃o (left_part : Set (γ ⊕ₗ δ)))) with ⟨iso2⟩
+      have iso := iso.trans iso2.symm
+      rcases (equal_iso e_def) with ⟨iso2⟩
+      rcases (swap_iso_right iso2.symm iso) with ⟨iso⟩
+      apply nonempty_of_exists
+      use iso
+    have second_part : Nonempty (e ⊕ₗ δ ≃o β) := by
+      rcases h with ⟨image_subset_left, _⟩
+      rcases (initial_inside_sum_compl_iso left_initial image_subset_left)
+        with ⟨iso⟩
+      rcases (equal_iso e_def) with ⟨iso2⟩
+      rcases (swap_iso_left iso2.symm iso) with ⟨iso⟩
+      rcases (equal_iso (image_left_compl_image_right f)) with ⟨iso2⟩
+      have iso := iso.trans iso2
+      rcases (right_iso_image_right f) with ⟨iso2⟩
+      have iso := iso.trans iso2.symm
+      rcases (equal_iso (left_compl_right : (left_partᶜ = (right_part : Set (γ ⊕ₗ δ)))))
+        with ⟨iso2⟩
+      rcases (swap_iso_right iso2 iso) with ⟨iso⟩
+      rcases (right_part_iso : Nonempty (δ ≃o ↑(right_part : Set (γ ⊕ₗ δ))))
+        with ⟨iso2⟩
+      rcases (swap_iso_right iso2.symm iso) with ⟨iso⟩
+      apply nonempty_of_exists
+      use iso
+    constructor
+    trivial
+    trivial
