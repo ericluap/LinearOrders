@@ -61,6 +61,19 @@
 
 \maketitle
 
+\section*{Main Theorems Formalized}
+\begin{theorem}[Lindenbaum]
+If $X$ and $Y$ are linear orders such that $X$ embeds in an initial segment of $Y$ and $Y$ embeds in a final segment of $X$, then $X \iso Y$.
+\end{theorem}
+
+\begin{theorem}[Sum Refinement]
+If $X$, $Y$, $A$, and $B$ are linear orders such that $X + Y \iso A+B$, then there exists a linear order $E$ such that either
+\begin{itemize}
+\item $A + E \iso X$ and $E + Y \iso B$, or
+\item $X + E \iso A$ and $E + B \iso Y$
+\end{itemize}
+\end{theorem}
+
 \section*{Linear Order Definition}
 \newcommand\LE{\newlink{def:LE}{\text{LE}}}
 \begin{definition}[$\LE$]
@@ -214,7 +227,7 @@ Dual of Theorem \ref{comp_initial_final}.
 Let $h$ be a function from $\N$ to subsets of $\aalpha$ such that for all $n : \N$, $\isInitial{h(n)}$. Then we have that $\isInitial{\bigcup_{n\in \N} h(n)}$.
 \end{theorem}
 \begin{proof}
-Let $x\in \bigcup_{n\in \N} h(n)$ and let $y < x$. Then, by the definition of $\isInitial{\bigcup_{n\in \N} h(n)}$, it is now our goal to prove that $y\in \bigcup_{n\in \N} h(n)$. This is equivalent to showing that there exists an $i\in \N$ such that $y \in h(i)$. Furthermore, since we know that $x\in \bigcup_{n\in \N} h(n)$, we know that there exists a $w\in \N$ such that $x\in h(w)$.
+Let $x\in \bigcup_{n\in \N} h(n)$ and let $y < x$. Then, by the definition of $\isInitial{\bigcup_{n\in \N} h(n)}$, it is now our goal to prove that $y\in \bigcup_{n\in \N} h(n)$. This is equivalent to showing that there exists an $i\in \N$ such that $y \in f(i)$. Furthermore, since we know that $x\in \bigcup_{n\in \N} h(n)$, we know that there exists a $w\in \N$ such that $x\in h(w)$.
 
 We now claim that $y \in h(w)$. Since for all $n\in \N$, $\isInitial{h(n)}$, we have that $\isInitial{h(w)}$. So since $x\in h(w)$ and $y < x$, then by the definition of $\isInitial{h(w)}$, we have that $y\in h(w)$. Thus, we have shown that there exists an $i\in \N$ such that $y\in h(i)$.
 \end{proof}
