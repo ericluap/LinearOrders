@@ -49,11 +49,49 @@ variable [LinearOrder α] [LinearOrder β]
 
 variable (f : α ≼i β) (g : β ≼f α)
 
+def FinalSeg_to_dual : βᵒᵈ ≼i αᵒᵈ  :=
+  {
+    toFun := g.toFun
+    inj' := g.inj',
+    init' := by
+      intros x y z
+      simp at *
+      exact g.final' x y z
+    map_rel_iff' := by
+      simp at *
+      intros x y
+      exact RelEmbedding.map_rel_iff g.toRelEmbedding
+  }
+
+def InitialSeg_to_dual : αᵒᵈ ≼f βᵒᵈ :=
+ {
+    toFun := f.toFun
+    inj' := f.inj',
+    final' := by
+      intros x y z
+      simp at *
+      exact f.init' x y z
+    map_rel_iff' := by
+      simp at *
+      intros x y
+      exact RelEmbedding.map_rel_iff f.toRelEmbedding
+  }
+
 /-
 Define what it means for a subset of a linear order to be an initial or final segment
 -/
 def isInitial (s : Set α) := ∀x ∈ s, ∀y : α, y < x → y ∈ s
 def isFinal (s : Set α) := ∀x ∈ s, ∀y : α, y > x → y ∈ s
+
+theorem isFinal_to_dual {s : Set α} (hs : isFinal s) : isInitial (α := αᵒᵈ) s := by
+  unfold isInitial
+  intros x hx y hy
+  exact hs x hx y hy
+
+theorem isInitial_to_dual {s : Set α} (hs : isInitial s) : isFinal (α := αᵒᵈ) s := by
+  unfold isFinal
+  intros x hx y hy
+  exact hs x hx y hy
 
 /-
 Initial embedding maps an initial segment to an initial segment
@@ -86,22 +124,8 @@ theorem image_of_univ_initial : isInitial (f '' univ) := by
 Final embedding maps a final segment to a final segment
 -/
 theorem final_maps_final_final {s : Set β} (hs : isFinal s) : isFinal (g '' s) := by
-  unfold isFinal at *
-  intros x hx y hy
-  rw [mem_image] at *
-  obtain ⟨w, hw⟩ := hx
-  obtain ⟨w_in_s, fw_x⟩ := hw
-  rw [←fw_x] at hy
-  have hf := (g.final' w y hy)
-  obtain ⟨z, hz⟩ := hf
-  simp at *
-  rw [←hz] at hy
-  have ord : w < z := by
-    rw [←g.map_rel_iff']
-    trivial
-  use z
-  constructor
-  exact (hs w w_in_s z ord)
+  apply isFinal_to_dual at hs
+  apply initial_maps_initial_initial (FinalSeg_to_dual g) at hs
   trivial
 
 theorem image_of_univ_final : isFinal (g '' univ) := by
@@ -126,13 +150,8 @@ theorem comp_initial_final {s : Set α} (hs : isInitial s) : isFinal (univ \ s) 
 Complement of final segment is initial
 -/
 theorem comp_final_initial {s : Set α} (hs : isFinal s) : isInitial (univ \ s) := by
-  unfold isInitial
-  intros x hx y hy
-  unfold isFinal at hs
-  apply byContradiction
-  intros hny
-  simp at *
-  have contra := hs y hny x hy
+  apply isFinal_to_dual at hs
+  apply comp_initial_final at hs
   trivial
 
 /-
