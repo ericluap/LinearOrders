@@ -57,7 +57,7 @@ theorem sbAux_initial : ∀ n : ℕ, isInitial (sbAux f g n) := by
     rcases hx with ⟨b, ⟨w,hw⟩⟩
     rw [←hw] at hyx
     have alb : a < b := by
-      rw [←g.map_rel_iff']
+      rw [←lt_iff_lt_of_le_iff_le g.map_rel_iff']
       trivial
     unfold isInitial at prev_is_initial
     have a_in_image : a ∈ f '' sbAux f g n := prev_is_initial b w a alb
@@ -189,13 +189,13 @@ theorem order_preserving' [Nonempty β] (hh : α ≃ β) (ht : hh = sbFun f g) :
     rw [ht] at halhb
     unfold sbFun at halhb
     simp [if_pos ha, if_pos hb] at halhb
-    rw [←f.map_rel_iff']
+    rw [←lt_iff_lt_of_le_iff_le f.map_rel_iff']
     trivial
   · intros halb
     rw [ht]
     unfold sbFun
     simp [if_pos ha, if_pos hb]
-    rw [←f.map_rel_iff'] at halb
+    rw [←lt_iff_lt_of_le_iff_le f.map_rel_iff'] at halb
     trivial
   constructor
   · intros halhb
@@ -280,7 +280,7 @@ theorem order_preserving' [Nonempty β] (hh : α ≃ β) (ht : hh = sbFun f g) :
       unfold sbFun at halhb
       simp [if_neg ha, if_neg hb] at halhb
       have : g (Function.invFun g a) < g (Function.invFun g b) := by
-        rw [←g.map_rel_iff'] at halhb
+        rw [←lt_iff_lt_of_le_iff_le g.map_rel_iff'] at halhb
         trivial
       rw [sb_right_inv f g ha, sb_right_inv f g hb] at this
       trivial
@@ -290,7 +290,7 @@ theorem order_preserving' [Nonempty β] (hh : α ≃ β) (ht : hh = sbFun f g) :
       simp [if_neg ha, if_neg hb]
       have : g (Function.invFun g a) < g (Function.invFun g b) → (Function.invFun g a) < (Function.invFun g b) := by
         intros hg
-        rw [←g.map_rel_iff']
+        rw [←lt_iff_lt_of_le_iff_le g.map_rel_iff']
         trivial
       apply this
       rw [sb_right_inv f g ha, sb_right_inv f g hb]

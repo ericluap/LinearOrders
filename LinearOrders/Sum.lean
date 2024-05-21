@@ -598,3 +598,13 @@ theorem sum_refinement
     constructor
     trivial
     trivial
+
+theorem initial_plus (f : α ≼i β) :
+∃e : Type v, ∃s : LinearOrder e, Nonempty (α ⊕ₗ e ≃o β) := by
+  use ↑(f '' univ)ᶜ, Subtype.instLinearOrder (f '' univ)ᶜ
+  have := image_of_univ_initial f
+  rcases (initial_plus_final this) with ⟨iso⟩
+  rcases (type_iso_image f.toRelEmbedding) with ⟨iso2⟩
+  rcases (swap_iso_left iso2.symm iso) with ⟨iso⟩
+  apply nonempty_of_exists
+  use iso

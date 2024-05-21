@@ -110,6 +110,13 @@ theorem univ_iso_type : Nonempty (α ≃o (univ : Set α)) := by
     trivial
   exact make_iso qinj qsurj qord
 
+theorem type_iso_image (f : α ↪o β) : Nonempty (α ≃o f '' univ) := by
+rcases (univ_iso_type (α := α)) with ⟨iso⟩
+rcases (iso_to_image f univ) with ⟨iso2⟩
+have iso := iso.trans iso2
+apply nonempty_of_exists
+use iso
+
 theorem subset_cap_iso {a b : Set α} (ha : a ⊆ b)
 : Nonempty (b ↓∩ a ≃o a) := by
   set q : b ↓∩ a → a := λ g => by

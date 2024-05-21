@@ -38,11 +38,11 @@ instance : EmbeddingLike (r ≼f s) α β where
   injective' f := f.inj'
 
 abbrev OrderInitialSeg (α β : Type*) [LinearOrder α] [LinearOrder β] :=
-  @LT.lt α _ ≼i @LT.lt β _
+  @LE.le α _ ≼i @LE.le β _
 infixl:25 " ≼i " => OrderInitialSeg
 
 abbrev OrderFinalSeg (α β : Type*) [LinearOrder α] [LinearOrder β] :=
-  @LT.lt α _ ≼f @LT.lt β _
+  @LE.le α _ ≼f @LE.le β _
 infixl:25 " ≼f " => OrderFinalSeg
 
 variable [LinearOrder α] [LinearOrder β]
@@ -103,12 +103,13 @@ theorem initial_maps_initial_initial {s : Set α} (hs : isInitial s) : isInitial
   obtain ⟨w, hw⟩ := hx
   obtain ⟨w_in_s, fw_x⟩ := hw
   rw [←fw_x] at hy
-  have hf := (f.init' w y hy)
+  have hy' : y ≤ f w := le_of_lt hy
+  have hf := (f.init' w y hy')
   obtain ⟨z, hz⟩ := hf
   simp at *
   rw [←hz] at hy
   have ord : z < w := by
-    rw [←f.map_rel_iff']
+    rw [←lt_iff_lt_of_le_iff_le f.map_rel_iff']
     trivial
   use z
   constructor
