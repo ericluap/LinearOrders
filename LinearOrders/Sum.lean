@@ -22,6 +22,131 @@ universe u v w x y
 variable {α : Type u} {β : Type v} {γ : Type w} {δ : Type x}
   [LinearOrder α] [LinearOrder β] [LinearOrder γ] [LinearOrder δ]
 
+theorem sum_assoc : Nonempty ((α ⊕ₗ β) ⊕ₗ γ ≃o α ⊕ₗ (β ⊕ₗ γ)) := by
+  set q : (α ⊕ₗ β) ⊕ₗ γ → α ⊕ₗ (β ⊕ₗ γ) := λg =>
+    match g with
+    | Sum.inl (Sum.inl a) => Sum.inlₗ a
+    | Sum.inl (Sum.inr b) => Sum.inrₗ (Sum.inlₗ b)
+    | Sum.inr c => Sum.inrₗ (Sum.inrₗ c)
+    with q_def
+  have qinj : Function.Injective q := by
+    unfold Function.Injective
+    intros x y hxy
+    simp [q_def] at hxy
+    rcases x with x | x
+    · rcases x with x | x
+      · rcases y with y | y
+        · rcases y with y | y
+          · simp at hxy
+            rw [hxy]
+          · simp at hxy
+        · simp at hxy
+      · rcases y with y | y
+        · rcases y with y | y
+          · simp at hxy
+          · simp at hxy
+            rw [hxy]
+        · simp at hxy
+    · rcases y with y | y
+      · rcases y with y | y
+        · simp at hxy
+        · simp at hxy
+      · simp at hxy
+        rw [hxy]
+  have qsurj : Function.Surjective q := by
+    unfold Function.Surjective
+    intros x
+    rcases x with x | x
+    · use (Sum.inl (Sum.inl x))
+      simp [q_def]
+      change _ = toLex _
+      simp
+    · rcases x with x | x
+      · use (Sum.inl (Sum.inr x))
+        simp [q_def]
+        change _ = toLex _
+        simp
+        change _ = toLex _
+        simp
+      · use (Sum.inr x)
+        simp [q_def]
+        change _ = toLex _
+        simp
+        change _ = toLex _
+        simp
+  have qord : ∀{x y : (α ⊕ₗ β) ⊕ₗ γ}, q x ≤ q y ↔ x ≤ y := by
+    intros x y
+    constructor
+    · intros hxy
+      simp [q_def] at hxy
+      rcases x with x | x
+      · rcases x with x | x
+        · rcases y with y | y
+          · rcases y with y | y
+            · simp at hxy
+              change toLex _ ≤ toLex _
+              simp
+              change toLex _ ≤ toLex _
+              simp
+              trivial
+            · change toLex _ ≤ toLex _
+              simp
+              exact Sum.Lex.inl_le_inr x y
+          · change toLex _ ≤ toLex _
+            simp
+        · rcases y with y | y
+          · rcases y with y | y
+            · simp at hxy
+            · simp at hxy
+              change toLex _ ≤ toLex _
+              simp
+              change toLex _ ≤ toLex _
+              simp
+              trivial
+          · change toLex _ ≤ toLex _
+            simp
+      · rcases y with y | y
+        · rcases y with y | y
+          · simp at hxy
+          · simp at hxy
+        · simp at hxy
+          change toLex _ ≤ toLex _
+          simp
+          trivial
+    · intros hxy
+      simp [q_def]
+      rcases x with x | x
+      · rcases x with x | x
+        · rcases y with y | y
+          · rcases y with y | y
+            · simp
+              change toLex _ ≤ toLex _ at hxy
+              simp at hxy
+              change toLex _ ≤ toLex _ at hxy
+              simp at hxy
+              trivial
+            · simp
+          · simp
+        · rcases y with y | y
+          · rcases y with y | y
+            · contradiction
+            · simp
+              change toLex _ ≤ toLex _ at hxy
+              simp at hxy
+              change toLex _ ≤ toLex _ at hxy
+              simp at hxy
+              trivial
+          · simp
+      · rcases y with y | y
+        · rcases y with y | y
+          · contradiction
+          · contradiction
+        · simp
+          change toLex _ ≤ toLex _ at hxy
+          simp at hxy
+          trivial
+  exact make_iso qinj qsurj qord
+
 section Parts
 variable (f : α ⊕ₗ β ≃o γ)
 
