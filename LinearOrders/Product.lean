@@ -327,11 +327,11 @@ theorem fin_sum : ∀{n m : Nat}, Nonempty (Fin (n+m) ≃o (Fin n) ⊕ₗ (Fin m
   use iso.symm
 
 theorem initial_in_prod_initial : ∀n : Nat,
-Fin (n+1) ×ₗ α ≼i Fin (n+1) ×ₗ β → Nonempty (α ≼i β) := by
+∀α : Type u, ∀β : Type u, [LinearOrder α] → [LinearOrder β] → Fin (n+1) ×ₗ α ≼i Fin (n+1) ×ₗ β → Nonempty (α ≼i β) := by
   intros n
   induction n with
   | zero =>
-    intros initial
+    intros α β _ _ initial
     simp at initial
     have : 0 + 1 = 1 := by simp
     rw [this] at initial
@@ -342,7 +342,7 @@ Fin (n+1) ×ₗ α ≼i Fin (n+1) ×ₗ β → Nonempty (α ≼i β) := by
     apply nonempty_of_exists
     use this
   | succ x ih =>
-    intros initial
+    intros α β _ _ initial
     rcases fin_sum (n := Nat.succ x) (m := 1) with ⟨iso2⟩
     rcases swap_left iso2 (β := α) with ⟨iso⟩
     rcases distribute (α := Fin (x+1)) (β := Fin 1) (γ := α) with ⟨iso2⟩
@@ -353,4 +353,19 @@ Fin (n+1) ×ₗ α ≼i Fin (n+1) ×ₗ β → Nonempty (α ≼i β) := by
     have new_init := initial_swap_left initial iso.symm
     apply initial_plus at new_init
     rcases new_init with ⟨e, ⟨_, ⟨eiso⟩⟩⟩
+    rcases sum_assoc (α := (Fin (x + 1) ×ₗ α)) (β := α) (γ := e) with ⟨assoc⟩
+    have eiso := assoc.symm.trans eiso
+    rcases fin_sum (n := Nat.succ x) (m := 1) with ⟨iso2⟩
+    rcases swap_left iso2 (β := β) with ⟨iso⟩
+    rcases distribute (α := Fin (x+1)) (β := Fin 1) (γ := β) with ⟨iso2⟩
+    have iso := iso.trans iso2
+    rcases times_one (α := β) with ⟨iso2⟩
+    rcases change_iso_right iso2 (α := (Fin (x + 1) ×ₗ β)) with ⟨iso2⟩
+    have iso := iso.trans iso2
+    have iso := eiso.trans iso
+    have refined := sum_refinement iso
+    rcases refined with ⟨e', ⟨_, new_cases⟩⟩
+    rcases new_cases with ⟨⟨fst_iso⟩, ⟨snd_iso⟩⟩ | ⟨⟨fst_iso⟩, ⟨snd_iso⟩⟩
+    have := plus_initial fst_iso
+    rcases ih β α this with ⟨binit⟩
     sorry

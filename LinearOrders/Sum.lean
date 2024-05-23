@@ -733,3 +733,40 @@ theorem initial_plus (f : α ≼i β) :
   rcases (swap_iso_left iso2.symm iso) with ⟨iso⟩
   apply nonempty_of_exists
   use iso
+
+theorem plus_initial (f : α ⊕ₗ β ≃o γ) : α ≼i γ := by
+  set f' : α → γ := λg => f (Sum.inl g) with f'_def
+  have : Function.Injective f' := by
+    unfold Function.Injective
+    intros x y hxy
+    simp [f'_def] at hxy
+    change toLex _ = toLex _ at hxy
+    simp at hxy
+    trivial
+  set f'' : α ↪ γ := ⟨f', this⟩ with f''_def
+  have : ∀ {a b}, (f'' a) ≤ (f'' b) ↔ a ≤ b := by
+    intros x y
+    constructor
+    · intros hxy
+      simp [f''_def, f'_def] at hxy
+      change toLex _ ≤ toLex _ at hxy
+      simp at hxy
+      trivial
+    · intros hxy
+      simp [f''_def, f'_def]
+      change toLex _ ≤ toLex _
+      simp
+      trivial
+  set f''' : @LE.le α _ ↪r @LE.le γ _ := ⟨f'', this⟩ with f'''_def
+  have init' : ∀a b, b ≤ (f''' a) → ∃ a', f''' a' = b := by
+    intros x y hxy
+    simp [f'''_def, f''_def, f'_def] at hxy
+    set z := f.invFun y with z_def
+    rcases z with z | z
+    · use z
+      simp [*]
+    · have : f (Sum.inr z) ≤ f (Sum.inl x) := by
+        simp [*]
+      simp at this
+      contradiction
+  exact ⟨f''', init'⟩
