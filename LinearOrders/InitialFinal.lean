@@ -1,7 +1,6 @@
 import Mathlib.Init.Order.LinearOrder
 import Mathlib.Order.Hom.Basic
 import Mathlib.Order.InitialSeg
-import Mathlib.SetTheory.Cardinal.SchroederBernstein
 import Mathlib.Data.Finset.Basic
 import Mathlib.Init.Set
 import Mathlib.Data.Set.Subset
@@ -48,6 +47,86 @@ infixl:25 " ≼f " => OrderFinalSeg
 variable [LinearOrder α] [LinearOrder β]
 
 variable (f : α ≼i β) (g : β ≼f α)
+
+theorem initial_swap_left [LinearOrder γ] (q : γ ≃o α) :
+γ ≼i β := by
+  set m : γ → β := λg => f (q g) with m_def
+  have : Function.Injective m := by
+    unfold Function.Injective
+    simp [m_def]
+  set m' : γ ↪ β := ⟨m, this⟩ with m'_def
+  have : ∀ {a b}, (m' a) ≤ (m' b) ↔ a ≤ b := by
+    intros a b
+    simp [m'_def, m_def]
+    constructor
+    · intros hab
+      simp at hab
+      have hab : f.toEmbedding (q a) ≤ f.toEmbedding (q b) := by
+        exact hab
+      rw [f.map_rel_iff'] at hab
+      simp at hab
+      trivial
+    · intros hab
+      have hab : q a ≤ q b := by
+        simp
+        trivial
+      have : f.toEmbedding (q a) ≤ f.toEmbedding (q b) := by
+        rw [f.map_rel_iff']
+        trivial
+      simp at this
+      trivial
+  set m'' : @LE.le γ _ ↪r @LE.le β _ := ⟨m', this⟩ with m''_def
+  have init' : ∀ a b, b ≤ (m'' a) → ∃ a', m'' a' = b := by
+    intros a b hab
+    simp [m''_def, m'_def, m_def]
+    simp [m''_def, m'_def, m_def] at hab
+    rcases f.init' (q a) b hab with ⟨z, hz⟩
+    simp at hz
+    use (q.invFun z)
+    simp
+    trivial
+  exact ⟨m'', init'⟩
+
+theorem initial_swap_right [LinearOrder γ] (q : β ≃o γ) :
+α ≼i γ := by
+  set m : α → γ := λg => q (f g) with m_def
+  have : Function.Injective m := by
+    unfold Function.Injective
+    simp [m_def]
+  set m' : α ↪ γ := ⟨m, this⟩ with m'_def
+  have : ∀ {a b}, (m' a) ≤ (m' b) ↔ a ≤ b := by
+    intros a b
+    simp [m'_def, m_def]
+    constructor
+    · intros hab
+      have hab : f.toEmbedding a ≤ f.toEmbedding b := by
+        exact hab
+      rw [f.map_rel_iff'] at hab
+      trivial
+    · intros hab
+      have : f.toEmbedding a ≤ f.toEmbedding b := by
+        rw [f.map_rel_iff']
+        trivial
+      simp at this
+      trivial
+  set m'' : @LE.le α _ ↪r @LE.le γ _ := ⟨m', this⟩ with m''_def
+  have init' : ∀ a b, b ≤ (m'' a) → ∃ a', m'' a' = b := by
+    intros a b hab
+    simp [m''_def, m'_def, m_def]
+    simp [m''_def, m'_def, m_def] at hab
+    set z := q.invFun b with z_def
+    have : q z ≤ q (f a) := by
+      rw [z_def]
+      simp
+      trivial
+    simp at this
+    rcases f.init' a z this with ⟨j, hj⟩
+    simp at hj
+    use j
+    rw [hj]
+    rw [z_def]
+    simp
+  exact ⟨m'', init'⟩
 
 def FinalSeg_to_dual : βᵒᵈ ≼i αᵒᵈ  :=
   {

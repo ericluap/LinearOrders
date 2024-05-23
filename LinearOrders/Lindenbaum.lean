@@ -1,9 +1,8 @@
 import Mathlib.Init.Order.LinearOrder
 import Mathlib.Order.Hom.Basic
 import Mathlib.Order.InitialSeg
-import Mathlib.SetTheory.Cardinal.SchroederBernstein
 import Mathlib.Data.Finset.Basic
-import Lindenbaum.InitialFinal
+import LinearOrders.InitialFinal
 
 noncomputable section
 open Classical

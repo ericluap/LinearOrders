@@ -2,14 +2,13 @@ import Mathlib.Init.Order.LinearOrder
 import Mathlib.Order.Hom.Basic
 import Mathlib.Order.Hom.Set
 import Mathlib.Order.InitialSeg
-import Mathlib.SetTheory.Cardinal.SchroederBernstein
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Sum.Order
-import Lindenbaum.Lindenbaum
-import Lindenbaum.InitialFinal
+import LinearOrders.Lindenbaum
 import Mathlib.Data.Set.Basic
 import Mathlib.Data.Sum.Order
 import Mathlib.Data.Set.Subset
+import LinearOrders.InitialFinal
 
 noncomputable section
 open Classical

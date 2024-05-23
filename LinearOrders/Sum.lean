@@ -5,12 +5,12 @@ import Mathlib.Order.InitialSeg
 import Mathlib.SetTheory.Cardinal.SchroederBernstein
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Sum.Order
-import Lindenbaum.Lindenbaum
-import Lindenbaum.InitialFinal
+import LinearOrders.Lindenbaum
+import LinearOrders.InitialFinal
 import Mathlib.Data.Set.Basic
 import Mathlib.Data.Sum.Order
 import Mathlib.Data.Set.Subset
-import Lindenbaum.Iso
+import LinearOrders.Iso
 
 noncomputable section
 open Classical
