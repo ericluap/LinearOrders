@@ -326,7 +326,7 @@ theorem fin_sum : ∀{n m : Nat}, Nonempty (Fin (n+m) ≃o (Fin n) ⊕ₗ (Fin m
   apply nonempty_of_exists
   use iso.symm
 
-theorem initial_in_prod_initial : ∀n : Nat,
+theorem initial_in_finite_prod_initial : ∀n : Nat,
 ∀α : Type u, ∀β : Type u, [LinearOrder α] → [LinearOrder β] → Fin (n+1) ×ₗ α ≼i Fin (n+1) ×ₗ β → Nonempty (α ≼i β) := by
   intros n
   induction n with
@@ -365,7 +365,18 @@ theorem initial_in_prod_initial : ∀n : Nat,
     have iso := eiso.trans iso
     have refined := sum_refinement iso
     rcases refined with ⟨e', ⟨_, new_cases⟩⟩
-    rcases new_cases with ⟨⟨fst_iso⟩, ⟨snd_iso⟩⟩ | ⟨⟨fst_iso⟩, ⟨snd_iso⟩⟩
+    rcases new_cases with ⟨⟨fst_iso⟩, ⟨snd_iso⟩⟩ | ⟨⟨fst_iso⟩, ⟨_⟩⟩
     have := plus_initial fst_iso
     rcases ih β α this with ⟨binit⟩
-    sorry
+    have final := plus_final snd_iso
+    have : α ⊕ₗ e ≃o α ⊕ₗ e := by exact OrderIso.refl (Lex (α ⊕ e))
+    have : α ≼i α ⊕ₗ e := plus_initial this
+    have := binit.trans this
+    have : β ≼i α ⊕ₗ e := by exact this
+    rcases lindenbaum this final with ⟨iso⟩
+    have := plus_initial iso.symm
+    apply nonempty_of_exists
+    use this
+    have := plus_initial fst_iso
+    have := ih α β this
+    trivial

@@ -21,19 +21,19 @@ variable {α : Type*} {β : Type*} {γ : Type*} {r : α → α → Prop} {s : β
 structure FinalSeg {α β : Type*} (r : α → α → Prop) (s : β → β → Prop) extends r ↪r s where
   final' : ∀ a b, s (toRelEmbedding a) b -> ∃ a', toRelEmbedding a' = b
 
-infixl:24 " ≼f " => FinalSeg
+infixl:24 " ≼f' " => FinalSeg
 
-instance : Coe (r ≼f s) (r ↪r s) :=
+instance : Coe (r ≼f' s) (r ↪r s) :=
   ⟨FinalSeg.toRelEmbedding⟩
 
-instance : FunLike (r ≼f s) α β where
+instance : FunLike (r ≼f' s) α β where
   coe f := f.toFun
   coe_injective' := by
     rintro ⟨f, hf⟩ ⟨g, hg⟩ h
     congr with x
     exact congr_fun h x
 
-instance : EmbeddingLike (r ≼f s) α β where
+instance : EmbeddingLike (r ≼f' s) α β where
   injective' f := f.inj'
 
 abbrev OrderInitialSeg (α β : Type*) [LinearOrder α] [LinearOrder β] :=
@@ -41,7 +41,7 @@ abbrev OrderInitialSeg (α β : Type*) [LinearOrder α] [LinearOrder β] :=
 infixl:25 " ≼i " => OrderInitialSeg
 
 abbrev OrderFinalSeg (α β : Type*) [LinearOrder α] [LinearOrder β] :=
-  @LE.le α _ ≼f @LE.le β _
+  @LE.le α _ ≼f' @LE.le β _
 infixl:25 " ≼f " => OrderFinalSeg
 
 variable [LinearOrder α] [LinearOrder β]

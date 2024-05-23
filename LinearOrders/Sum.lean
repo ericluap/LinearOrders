@@ -770,3 +770,120 @@ theorem plus_initial (f : α ⊕ₗ β ≃o γ) : α ≼i γ := by
       simp at this
       contradiction
   exact ⟨f''', init'⟩
+
+theorem dual_sum : Nonempty (α ⊕ₗ β ≃o (βᵒᵈ ⊕ₗ αᵒᵈ)ᵒᵈ) := by
+  set q : α ⊕ₗ β → (βᵒᵈ ⊕ₗ αᵒᵈ)ᵒᵈ := λg =>
+    match g with
+    | Sum.inlₗ a => Sum.inrₗ a
+    | Sum.inrₗ b => Sum.inlₗ b
+    with q_def
+  have qinj : Function.Injective q := by
+    unfold Function.Injective
+    intros x y hxy
+    simp [q_def] at hxy
+    rcases x with x | x
+    · rcases y with y | y
+      · simp at hxy
+        have : Function.Injective (Sum.inr : αᵒᵈ → Lex (βᵒᵈ ⊕ αᵒᵈ)):= Sum.inr_injective
+        have := this hxy
+        rw [this]
+      · simp at hxy
+        contradiction
+    · rcases y with y | y
+      · simp at hxy
+        contradiction
+      · simp at hxy
+        have : Function.Injective (Sum.inl : βᵒᵈ → Lex (βᵒᵈ ⊕ αᵒᵈ)):= Sum.inl_injective
+        have := this hxy
+        rw [this]
+  have qsurj : Function.Surjective q := by
+    unfold Function.Surjective
+    intros x
+    rcases x with x | x
+    · use (Sum.inr x)
+      simp [q_def]
+      change _ = toLex _
+      simp
+    · use (Sum.inl x)
+      simp [q_def]
+      change _ = toLex _
+      simp
+  have qord : ∀{x y : α ⊕ₗ β}, q x ≤ q y ↔ x ≤ y := by
+    intros x y
+    constructor
+    · intros hxy
+      simp [q_def] at hxy
+      rcases x with x | x
+      · rcases y with y | y
+        · simp at hxy
+          have := Sum.Lex.inr_le_inr_iff.mp hxy
+          change toLex _ ≤ toLex _
+          simp
+          trivial
+        · change toLex _ ≤ toLex _
+          simp
+      · rcases y with y | y
+        · simp at hxy
+          contradiction
+        · simp at hxy
+          change toLex _ ≤ toLex _
+          simp
+          have := Sum.Lex.inl_le_inl_iff.mp hxy
+          trivial
+    · intros hxy
+      simp [q_def]
+      rcases x with x | x
+      · rcases y with y | y
+        · simp
+          change toLex _ ≤ toLex _ at hxy
+          simp at hxy
+          apply Sum.Lex.inr_le_inr_iff.mpr
+          trivial
+        · simp
+          apply Sum.Lex.inl_le_inr
+      · rcases y with y | y
+        · simp
+          contradiction
+        · simp
+          apply Sum.Lex.inl_le_inl_iff.mpr
+          change toLex _ ≤ toLex _ at hxy
+          simp at hxy
+          trivial
+  exact make_iso qinj qsurj qord
+
+theorem plus_final (f : α ⊕ₗ β ≃o γ) : β ≼f γ := by
+  set f' : β → γ := λg => f (Sum.inr g) with f'_def
+  have : Function.Injective f' := by
+    unfold Function.Injective
+    intros x y hxy
+    simp [f'_def] at hxy
+    change toLex _ = toLex _ at hxy
+    simp at hxy
+    trivial
+  set f'' : β ↪ γ := ⟨f', this⟩ with f''_def
+  have : ∀ {a b}, (f'' a) ≤ (f'' b) ↔ a ≤ b := by
+    intros x y
+    constructor
+    · intros hxy
+      simp [f''_def, f'_def] at hxy
+      change toLex _ ≤ toLex _ at hxy
+      simp at hxy
+      trivial
+    · intros hxy
+      simp [f''_def, f'_def]
+      change toLex _ ≤ toLex _
+      simp
+      trivial
+  set f''' : @LE.le β _ ↪r @LE.le γ _ := ⟨f'', this⟩ with f'''_def
+  have final' : ∀ a b, (f''' a) ≤ b -> ∃ a', f''' a' = b := by
+    intros x y hxy
+    simp [f'''_def, f''_def, f'_def] at hxy
+    set z := f.invFun y with z_def
+    rcases z with z | z
+    · have : f (Sum.inr x) ≤ f (Sum.inl z) := by
+        simp [*]
+      simp at this
+      contradiction
+    · use z
+      simp [*]
+  exact ⟨f''', final'⟩
