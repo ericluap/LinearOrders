@@ -48,6 +48,34 @@ variable [LinearOrder α] [LinearOrder β]
 
 variable (f : α ≼i β) (g : β ≼f α)
 
+def FinalSeg_to_dual : βᵒᵈ ≼i αᵒᵈ  :=
+  {
+    toFun := g.toFun
+    inj' := g.inj',
+    init' := by
+      intros x y z
+      simp at *
+      exact g.final' x y z
+    map_rel_iff' := by
+      simp at *
+      intros x y
+      exact RelEmbedding.map_rel_iff g.toRelEmbedding
+  }
+
+def InitialSeg_to_dual : αᵒᵈ ≼f βᵒᵈ :=
+ {
+    toFun := f.toFun
+    inj' := f.inj',
+    final' := by
+      intros x y z
+      simp at *
+      exact f.init' x y z
+    map_rel_iff' := by
+      simp at *
+      intros x y
+      exact RelEmbedding.map_rel_iff f.toRelEmbedding
+  }
+
 theorem initial_swap_left [LinearOrder γ] (q : γ ≃o α) :
 γ ≼i β := by
   set m : γ → β := λg => f (q g) with m_def
@@ -86,6 +114,43 @@ theorem initial_swap_left [LinearOrder γ] (q : γ ≃o α) :
     simp
     trivial
   exact ⟨m'', init'⟩
+
+theorem final_swap_left [LinearOrder γ] (f : α ≼f β) (q : γ ≃o α) :
+γ ≼f β := by
+  set m : γ → β := λg => f (q g) with m_def
+  have : Function.Injective m := by
+    unfold Function.Injective
+    simp [m_def]
+  set m' : γ ↪ β := ⟨m, this⟩ with m'_def
+  have : ∀ {a b}, (m' a) ≤ (m' b) ↔ a ≤ b := by
+    intros a b
+    simp [m'_def, m_def]
+    constructor
+    · intros hab
+      simp at hab
+      have hab : f.toEmbedding (q a) ≤ f.toEmbedding (q b) := by
+        exact hab
+      rw [f.map_rel_iff'] at hab
+      simp at hab
+      trivial
+    · intros hab
+      have hab : q a ≤ q b := by
+        simp
+        trivial
+      have : f.toEmbedding (q a) ≤ f.toEmbedding (q b) := by
+        rw [f.map_rel_iff']
+        trivial
+      trivial
+  set m'' : @LE.le γ _ ↪r @LE.le β _ := ⟨m', this⟩ with m''_def
+  have final' : ∀ a b, (m'' a) ≤ b → ∃ a', m'' a' = b := by
+    intros a b hab
+    simp [m''_def, m'_def, m_def]
+    simp [m''_def, m'_def, m_def] at hab
+    rcases f.final' (q a) b hab with ⟨z, hz⟩
+    use (q.invFun z)
+    simp
+    trivial
+  exact ⟨m'', final'⟩
 
 theorem initial_swap_right [LinearOrder γ] (q : β ≃o γ) :
 α ≼i γ := by
@@ -128,33 +193,45 @@ theorem initial_swap_right [LinearOrder γ] (q : β ≃o γ) :
     simp
   exact ⟨m'', init'⟩
 
-def FinalSeg_to_dual : βᵒᵈ ≼i αᵒᵈ  :=
-  {
-    toFun := g.toFun
-    inj' := g.inj',
-    init' := by
-      intros x y z
-      simp at *
-      exact g.final' x y z
-    map_rel_iff' := by
-      simp at *
-      intros x y
-      exact RelEmbedding.map_rel_iff g.toRelEmbedding
-  }
-
-def InitialSeg_to_dual : αᵒᵈ ≼f βᵒᵈ :=
- {
-    toFun := f.toFun
-    inj' := f.inj',
-    final' := by
-      intros x y z
-      simp at *
-      exact f.init' x y z
-    map_rel_iff' := by
-      simp at *
-      intros x y
-      exact RelEmbedding.map_rel_iff f.toRelEmbedding
-  }
+theorem final_swap_right [LinearOrder γ] (f : α ≼f β) (q : β ≃o γ) :
+α ≼f γ := by
+  set m : α → γ := λg => q (f g) with m_def
+  have : Function.Injective m := by
+    unfold Function.Injective
+    simp [m_def]
+  set m' : α ↪ γ := ⟨m, this⟩ with m'_def
+  have : ∀ {a b}, (m' a) ≤ (m' b) ↔ a ≤ b := by
+    intros a b
+    simp [m'_def, m_def]
+    constructor
+    · intros hab
+      have hab : f.toEmbedding a ≤ f.toEmbedding b := by
+        exact hab
+      rw [f.map_rel_iff'] at hab
+      trivial
+    · intros hab
+      have : f.toEmbedding a ≤ f.toEmbedding b := by
+        rw [f.map_rel_iff']
+        trivial
+      trivial
+  set m'' : @LE.le α _ ↪r @LE.le γ _ := ⟨m', this⟩ with m''_def
+  have final' : ∀ a b, (m'' a) ≤ b -> ∃ a', m'' a' = b := by
+    intros a b hab
+    simp [m''_def, m'_def, m_def]
+    simp [m''_def, m'_def, m_def] at hab
+    set z := q.invFun b with z_def
+    have : q (f a) ≤ q z := by
+      rw [z_def]
+      simp
+      trivial
+    simp at this
+    rcases f.final' a z this with ⟨j, hj⟩
+    use j
+    change f j = z at hj
+    rw [hj]
+    rw [z_def]
+    simp
+  exact ⟨m'', final'⟩
 
 /-
 Define what it means for a subset of a linear order to be an initial or final segment

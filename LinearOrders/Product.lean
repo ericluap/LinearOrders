@@ -14,6 +14,7 @@ import Mathlib.SetTheory.Ordinal.Basic
 import LinearOrders.Sum
 import LinearOrders.Lindenbaum
 import LinearOrders.InitialFinal
+import Mathlib.Data.Int.ModEq
 
 noncomputable section
 open Classical
@@ -326,6 +327,30 @@ theorem fin_sum : ∀{n m : Nat}, Nonempty (Fin (n+m) ≃o (Fin n) ⊕ₗ (Fin m
   apply nonempty_of_exists
   use iso.symm
 
+/-
+theorem fin_dual {n : ℕ}: Nonempty ((Fin (n+1)) ≃o (Fin (n+1))ᵒᵈ) := by
+  set q' : ℕ → ℕ := λg => Int.natMod (-(g : ℤ) -1) (n+1) with q'_def
+  have : ∀m : ℕ, q' m < n+1 := by
+    simp [q'_def]
+    intros m
+    apply Int.natMod_lt
+    simp
+  set q : Fin (n+1) → (Fin (n+1))ᵒᵈ := λg => ⟨q' g.val, this g.val⟩
+    with q_def
+  have qinj : Function.Injective q := by
+    unfold Function.Injective
+    intros x y hxy
+    simp [q_def] at hxy
+    apply Fin.val_eq_of_eq at hxy
+    simp [q'_def] at hxy
+    have : (-x - 1) ≡ (-y - 1) [ZMOD n+1] := by
+      unfold Int.ModEq
+      simp
+    #check Int.ModEq
+    #check Int.modEq_iff_add_fac.mp hxy
+    #check Int.natMod_eq-/
+
+
 theorem initial_in_finite_prod_initial : ∀n : Nat,
 ∀α : Type u, ∀β : Type u, [LinearOrder α] → [LinearOrder β] → Fin (n+1) ×ₗ α ≼i Fin (n+1) ×ₗ β → Nonempty (α ≼i β) := by
   intros n
@@ -367,6 +392,61 @@ theorem initial_in_finite_prod_initial : ∀n : Nat,
     rcases refined with ⟨e', ⟨_, new_cases⟩⟩
     rcases new_cases with ⟨⟨fst_iso⟩, ⟨snd_iso⟩⟩ | ⟨⟨fst_iso⟩, ⟨_⟩⟩
     have := plus_initial fst_iso
+    rcases ih β α this with ⟨binit⟩
+    have final := plus_final snd_iso
+    have : α ⊕ₗ e ≃o α ⊕ₗ e := by exact OrderIso.refl (Lex (α ⊕ e))
+    have : α ≼i α ⊕ₗ e := plus_initial this
+    have := binit.trans this
+    have : β ≼i α ⊕ₗ e := by exact this
+    rcases lindenbaum this final with ⟨iso⟩
+    have := plus_initial iso.symm
+    apply nonempty_of_exists
+    use this
+    have := plus_initial fst_iso
+    have := ih α β this
+    trivial
+
+theorem final_in_finite_prod_final : ∀n : Nat,
+∀α : Type u, ∀β : Type u, [LinearOrder α] → [LinearOrder β] → Fin (n+1) ×ₗ α ≼f Fin (n+1) ×ₗ β → Nonempty (α ≼f β) := by
+  intros n
+  induction n with
+  | zero =>
+    intros α β _ _ final
+    simp at final
+    have : 0 + 1 = 1 := by simp
+    rw [this] at final
+    rcases (times_one (α := α)) with ⟨times_a⟩
+    rcases (times_one (α := β)) with ⟨times_b⟩
+    have := final_swap_left final times_a.symm
+    have := final_swap_right this times_b
+    apply nonempty_of_exists
+    use this
+  | succ x ih =>
+    intros α β _ _ final
+    rcases fin_sum (n := Nat.succ x) (m := 1) with ⟨iso2⟩
+    rcases swap_left iso2 (β := α) with ⟨iso⟩
+    rcases distribute (α := Fin (x+1)) (β := Fin 1) (γ := α) with ⟨iso2⟩
+    have iso := iso.trans iso2
+    rcases times_one (α := α) with ⟨iso2⟩
+    rcases change_iso_right iso2 (α := (Fin (x + 1) ×ₗ α)) with ⟨iso2⟩
+    have iso := iso.trans iso2
+    have new_final := final_swap_left final iso.symm
+    apply final_plus at new_final
+    rcases new_final with ⟨e, ⟨_, ⟨eiso⟩⟩⟩
+    rcases sum_assoc (α := e) (β := Fin (x + 1) ×ₗ α) (γ := α) with ⟨assoc⟩
+    /-have eiso := assoc.symm.trans eiso-/
+    rcases fin_sum (n := Nat.succ x) (m := 1) with ⟨iso2⟩
+    rcases swap_left iso2 (β := β) with ⟨iso⟩
+    rcases distribute (α := Fin (x+1)) (β := Fin 1) (γ := β) with ⟨iso2⟩
+    have iso := iso.trans iso2
+    rcases times_one (α := β) with ⟨iso2⟩
+    rcases change_iso_right iso2 (α := (Fin (x + 1) ×ₗ β)) with ⟨iso2⟩
+    have iso := iso.trans iso2
+    have iso := eiso.trans iso
+    have refined := sum_refinement iso
+    rcases refined with ⟨e', ⟨_, new_cases⟩⟩
+    rcases new_cases with ⟨⟨fst_iso⟩, ⟨snd_iso⟩⟩ | ⟨⟨fst_iso⟩, ⟨_⟩⟩
+    have := plus_final fst_iso
     rcases ih β α this with ⟨binit⟩
     have final := plus_final snd_iso
     have : α ⊕ₗ e ≃o α ⊕ₗ e := by exact OrderIso.refl (Lex (α ⊕ e))

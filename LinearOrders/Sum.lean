@@ -459,6 +459,102 @@ Nonempty (a ⊕ₗ (aᶜ : Set α) ≃o α) := by
   apply nonempty_of_exists
   use orderbij
 
+theorem final_compl_plus_final (ha : isFinal a) :
+Nonempty ((aᶜ : Set α) ⊕ₗ a ≃o α) := by
+  set q : (aᶜ : Set α) ⊕ₗ a → α := λ g =>
+    match g with
+    | Sum.inl g => g
+    | Sum.inr g => g
+    with q_def
+  have qinj : Function.Injective q := by
+    unfold Function.Injective
+    intros c d hcd
+    simp [q_def] at hcd
+    rcases c with c | c
+    rcases d with d | d
+    simp at hcd
+    have := Subtype.eq hcd
+    rw [this]
+    simp at hcd
+    have din : ↑d ∈ a := d.property
+    have cin : ↑c ∈ aᶜ := c.property
+    rw [hcd] at cin
+    contradiction
+    rcases d with d | d
+    simp at hcd
+    have cin := c.property
+    have din := d.property
+    rw [hcd] at cin
+    contradiction
+    simp at hcd
+    have := Subtype.eq hcd
+    rw [this]
+  have qsurj : Function.Surjective q := by
+    unfold Function.Surjective
+    intros b
+    by_cases hb : b ∈ a
+    use (Sum.inr ⟨b, hb⟩)
+    use (Sum.inl ⟨b, hb⟩)
+  have qbij : Function.Bijective q := ⟨qinj, qsurj⟩
+  rw [Function.bijective_iff_has_inverse] at qbij
+  rcases qbij with ⟨h, ⟨left_inv, right_inv⟩⟩
+  set q' : (aᶜ : Set α) ⊕ₗ a ≃ α := ⟨q, h, left_inv, right_inv⟩
+    with q'_def
+  have q'ord : ∀{c d : (aᶜ : Set α) ⊕ₗ a},
+    q' c ≤ q' d ↔ c ≤ d := by
+    intros c d
+    constructor
+    intros hcd
+    rcases c with c | c
+    rcases d with d | d
+    simp [q'_def, q_def] at hcd
+    have : Monotone (toLex ∘ Sum.inl : (aᶜ : Set α) → (aᶜ : Set α) ⊕ₗ a):= Sum.Lex.inl_mono
+    unfold Monotone at this
+    have := this hcd
+    trivial
+    have : toLex (Sum.inl c) ≤ toLex (Sum.inr d):= Sum.Lex.inl_le_inr c d
+    trivial
+    rcases d with d | d
+    simp [q'_def, q_def] at hcd
+    rw [le_iff_eq_or_lt] at hcd
+    rcases hcd with heq | hlt
+    have cin := c.property
+    have din := d.property
+    rw [heq] at cin
+    contradiction
+    have := ha c c.property d hlt
+    have din := d.property
+    contradiction
+    simp [q'_def, q_def] at hcd
+    have : Monotone (toLex ∘ Sum.inr : a → (aᶜ : Set α) ⊕ₗ a):= Sum.Lex.inr_mono
+    unfold Monotone at this
+    have := this hcd
+    trivial
+    intros hcd
+    rcases c with c | c
+    rcases d with d | d
+    simp [q'_def, q_def]
+    have : toLex (Sum.inl c) ≤ toLex (Sum.inl d) := hcd
+    simp [Sum.Lex.le_def] at this
+    trivial
+    simp [q'_def, q_def]
+    by_contra x
+    simp at x
+    have := ha d d.property c x
+    have cin := c.property
+    contradiction
+    rcases d with d | d
+    simp [q'_def, q_def]
+    have : toLex (Sum.inr c) ≤ toLex (Sum.inl d) := hcd
+    simp [Sum.Lex.le_def] at this
+    simp [q'_def, q_def]
+    have : toLex (Sum.inr c) ≤ toLex (Sum.inr d) := hcd
+    simp [Sum.Lex.le_def] at this
+    trivial
+  have orderbij : (aᶜ : Set α) ⊕ₗ a ≃o α := RelIso.mk q' q'ord
+  apply nonempty_of_exists
+  use orderbij
+
 end init_final
 
 theorem inl_iff_monotone : ∀(a b : α), ((toLex ∘ Sum.inl) a : α ⊕ₗ β) ≤ (toLex ∘ Sum.inl) b ↔ a ≤ b := by
@@ -731,6 +827,16 @@ theorem initial_plus (f : α ≼i β) :
   rcases (initial_plus_final this) with ⟨iso⟩
   rcases (type_iso_image f.toRelEmbedding) with ⟨iso2⟩
   rcases (swap_iso_left iso2.symm iso) with ⟨iso⟩
+  apply nonempty_of_exists
+  use iso
+
+theorem final_plus (f : α ≼f β) :
+∃e : Type v, ∃s : LinearOrder e, Nonempty (e ⊕ₗ α ≃o β) := by
+  use ↑(f '' univ)ᶜ, Subtype.instLinearOrder (f '' univ)ᶜ
+  have := image_of_univ_final f
+  rcases (final_compl_plus_final this) with ⟨iso⟩
+  rcases (type_iso_image f.toRelEmbedding) with ⟨iso2⟩
+  rcases (swap_iso_right iso2.symm iso) with ⟨iso⟩
   apply nonempty_of_exists
   use iso
 
