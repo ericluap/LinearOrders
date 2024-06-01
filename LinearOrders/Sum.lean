@@ -993,3 +993,15 @@ theorem plus_final (f : α ⊕ₗ β ≃o γ) : β ≼f γ := by
     · use z
       simp [*]
   exact ⟨f''', final'⟩
+
+theorem initial_initial_sum (f : α ≼i β) : α ≼i β ⊕ₗ γ := by
+  have : β ⊕ₗ γ ≃o β ⊕ₗ γ := OrderIso.refl (Lex (β ⊕ γ))
+  have : β ≼i β ⊕ₗ γ := plus_initial this
+  have : α ≼i β ⊕ₗ γ := f.trans this
+  trivial
+
+theorem final_final_sum (f : α ≼f β) : α ≼f γ ⊕ₗ β := by
+  have : γ ⊕ₗ β ≃o γ ⊕ₗ β := OrderIso.refl (Lex (γ ⊕ β))
+  have : β ≼f γ ⊕ₗ β := plus_final this
+  have : α ≼f γ ⊕ₗ β := f.trans this
+  trivial

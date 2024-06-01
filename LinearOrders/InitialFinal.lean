@@ -36,6 +36,16 @@ instance : FunLike (r ≼f' s) α β where
 instance : EmbeddingLike (r ≼f' s) α β where
   injective' f := f.inj'
 
+@[simp]
+theorem FinalSeg.coe_coe_fn (f : r ≼f' s) : ((f : r ↪r s) : α → β) = f :=
+  rfl
+
+def FinalSeg.trans (f : r ≼f' s) (g : s ≼f' t) : r ≼f' t :=
+  ⟨f.1.trans g.1, fun a c h => by
+    simp only [RelEmbedding.coe_trans, coe_coe_fn, Function.comp_apply] at h ⊢
+    rcases g.2 _ _ h with ⟨b, rfl⟩; have h := g.map_rel_iff.1 h
+    rcases f.2 _ _ h with ⟨a', rfl⟩; exact ⟨a', rfl⟩⟩
+
 abbrev OrderInitialSeg (α β : Type*) [LinearOrder α] [LinearOrder β] :=
   @LE.le α _ ≼i @LE.le β _
 infixl:25 " ≼i " => OrderInitialSeg
