@@ -350,114 +350,178 @@ theorem fin_dual {n : ℕ}: Nonempty ((Fin (n+1)) ≃o (Fin (n+1))ᵒᵈ) := by
     #check Int.modEq_iff_add_fac.mp hxy
     #check Int.natMod_eq-/
 
+lemma initial_in_finite_prod_initial_base_case : ∀ (α : Type u) (β : Type v) [inst : LinearOrder α] [inst_1 : LinearOrder β],
+  (Lex (Fin (Nat.zero + 1) × α) ≼i Lex (Fin (Nat.zero + 1) × β) → Nonempty (α ≼i β)) := by
+  intros α β _ _ initial
+  simp at initial
+  have : 0 + 1 = 1 := by simp
+  rw [this] at initial
+  rcases (times_one (α := α)) with ⟨times_a⟩
+  rcases (times_one (α := β)) with ⟨times_b⟩
+  have := initial_swap_left initial times_a.symm
+  have := initial_swap_right this times_b
+  apply nonempty_of_exists
+  use this
+
+lemma initial_in_finite_prod_initial_induction_step (x : ℕ) (ih : ∀ (α : Type u) (β : Type v) [inst : LinearOrder α] [inst_1 : LinearOrder β],
+  (Lex (Fin (x + 1) × α) ≼i Lex (Fin (x + 1) × β) → Nonempty (α ≼i β)) ∧
+    (Lex (Fin (x + 1) × β) ≼i Lex (Fin (x + 1) × α) → Nonempty (β ≼i α))) :
+Lex (Fin (Nat.succ x + 1) × α) ≼i Lex (Fin (Nat.succ x + 1) × β) → Nonempty (α ≼i β) := by
+  intros initial
+  rcases fin_sum (n := Nat.succ x) (m := 1) with ⟨iso2⟩
+  rcases swap_left iso2 (β := α) with ⟨iso⟩
+  rcases distribute (α := Fin (x+1)) (β := Fin 1) (γ := α) with ⟨iso2⟩
+  have iso := iso.trans iso2
+  rcases times_one (α := α) with ⟨iso2⟩
+  rcases change_iso_right iso2 (α := (Fin (x + 1) ×ₗ α)) with ⟨iso2⟩
+  have iso := iso.trans iso2
+  have new_init := initial_swap_left initial iso.symm
+  apply initial_plus at new_init
+  rcases new_init with ⟨e, ⟨_, ⟨eiso⟩⟩⟩
+  rcases sum_assoc (α := (Fin (x + 1) ×ₗ α)) (β := α) (γ := e) with ⟨assoc⟩
+  have eiso := assoc.symm.trans eiso
+  rcases fin_sum (n := Nat.succ x) (m := 1) with ⟨iso2⟩
+  rcases swap_left iso2 (β := β) with ⟨iso⟩
+  rcases distribute (α := Fin (x+1)) (β := Fin 1) (γ := β) with ⟨iso2⟩
+  have iso := iso.trans iso2
+  rcases times_one (α := β) with ⟨iso2⟩
+  rcases change_iso_right iso2 (α := (Fin (x + 1) ×ₗ β)) with ⟨iso2⟩
+  have iso := iso.trans iso2
+  have iso := eiso.trans iso
+  have refined := sum_refinement iso
+  rcases refined with ⟨e', ⟨_, new_cases⟩⟩
+  rcases new_cases with ⟨⟨fst_iso⟩, ⟨snd_iso⟩⟩ | ⟨⟨fst_iso⟩, ⟨_⟩⟩
+  have := plus_initial fst_iso
+  rcases ih α β with ⟨_, ih'⟩
+  rcases ih' this with ⟨binit⟩
+  have final := plus_final snd_iso
+  have : β ≼i α ⊕ₗ e := initial_initial_sum binit
+  rcases lindenbaum this final with ⟨iso⟩
+  have := plus_initial iso.symm
+  apply nonempty_of_exists
+  use this
+  have := plus_initial fst_iso
+  rcases ih α β with ⟨ih', _⟩
+  have := ih' this
+  trivial
+
+theorem initial_in_finite_prod_initial' : ∀n : Nat,
+∀α : Type u, ∀β : Type v, [LinearOrder α] → [LinearOrder β] →
+(Fin (n+1) ×ₗ α ≼i Fin (n+1) ×ₗ β → Nonempty (α ≼i β)) ∧
+(Fin (n+1) ×ₗ β ≼i Fin (n+1) ×ₗ α → Nonempty (β ≼i α)) := by
+  intros n
+  induction n with
+  | zero =>
+    intros α β _ _
+    constructor
+    · exact initial_in_finite_prod_initial_base_case α β
+    · exact initial_in_finite_prod_initial_base_case β α
+  | succ x ih =>
+    intros α β _ _
+    constructor
+    · exact initial_in_finite_prod_initial_induction_step x ih
+    · have : ∀ (α : Type v) (β : Type u) [inst : LinearOrder α] [inst_1 : LinearOrder β],
+    (Lex (Fin (x + 1) × α) ≼i Lex (Fin (x + 1) × β) → Nonempty (α ≼i β)) ∧
+      (Lex (Fin (x + 1) × β) ≼i Lex (Fin (x + 1) × α) → Nonempty (β ≼i α)) := by
+        intros a b _ _
+        have ih := ih b a
+        tauto
+      exact initial_in_finite_prod_initial_induction_step x this
 
 theorem initial_in_finite_prod_initial : ∀n : Nat,
-∀α : Type u, ∀β : Type u, [LinearOrder α] → [LinearOrder β] → Fin (n+1) ×ₗ α ≼i Fin (n+1) ×ₗ β → Nonempty (α ≼i β) := by
+∀α : Type u, ∀β : Type v, [LinearOrder α] → [LinearOrder β] →
+(Fin (n+1) ×ₗ α ≼i Fin (n+1) ×ₗ β → Nonempty (α ≼i β)) := by
+  intros n α β _ _
+  rcases initial_in_finite_prod_initial' n α β with ⟨initial, _ ⟩
+  trivial
+
+lemma final_in_finite_prod_final_base_case : ∀ (α : Type u) (β : Type v) [inst : LinearOrder α] [inst_1 : LinearOrder β],
+  (Lex (Fin (Nat.zero + 1) × α) ≼f Lex (Fin (Nat.zero + 1) × β) → Nonempty (α ≼f β)) := by
+  intros α β _ _ final
+  simp at final
+  have : 0 + 1 = 1 := by simp
+  rw [this] at final
+  rcases (times_one (α := α)) with ⟨times_a⟩
+  rcases (times_one (α := β)) with ⟨times_b⟩
+  have := final_swap_left final times_a.symm
+  have := final_swap_right this times_b
+  apply nonempty_of_exists
+  use this
+
+lemma final_in_finite_prod_final_induction_step (x : ℕ) (ih : ∀ (α : Type u) (β : Type v) [inst : LinearOrder α] [inst_1 : LinearOrder β],
+  (Lex (Fin (x + 1) × α) ≼f Lex (Fin (x + 1) × β) → Nonempty (α ≼f β)) ∧
+    (Lex (Fin (x + 1) × β) ≼f Lex (Fin (x + 1) × α) → Nonempty (β ≼f α))) :
+  (Lex (Fin (Nat.succ x + 1) × α) ≼f Lex (Fin (Nat.succ x + 1) × β) → Nonempty (α ≼f β)) := by
+  intros final
+  have : Nat.succ x + 1 = 1 + Nat.succ x := by omega
+  rw [this] at final
+  rcases fin_sum (m := Nat.succ x) (n := 1) with ⟨iso2⟩
+  rcases swap_left iso2 (β := α) with ⟨iso⟩
+  rcases distribute (β := Fin (x+1)) (α := Fin 1) (γ := α) with ⟨iso2⟩
+  have iso := iso.trans iso2
+  rcases times_one (α := α) with ⟨iso2⟩
+  rcases change_iso_left iso2 (β := (Fin (x + 1) ×ₗ α)) with ⟨iso2⟩
+  have iso := iso.trans iso2
+  have new_final := final_swap_left final iso.symm
+  apply final_plus at new_final
+  rcases new_final with ⟨e, ⟨_, ⟨eiso⟩⟩⟩
+  rcases sum_assoc (α := e) (γ := Fin (x + 1) ×ₗ α) (β := α) with ⟨assoc⟩
+  have eiso := assoc.trans eiso
+  rcases fin_sum (m := Nat.succ x) (n := 1) with ⟨iso2⟩
+  rcases swap_left iso2 (β := β) with ⟨iso⟩
+  rcases distribute (β := Fin (x+1)) (α := Fin 1) (γ := β) with ⟨iso2⟩
+  have iso := iso.trans iso2
+  rcases times_one (α := β) with ⟨iso2⟩
+  rcases change_iso_left iso2 (β := (Fin (x + 1) ×ₗ β)) with ⟨iso2⟩
+  have iso := iso.trans iso2
+  have iso := eiso.trans iso
+  have refined := sum_refinement iso
+  rcases refined with ⟨e', ⟨_, new_cases⟩⟩
+  rcases new_cases with ⟨⟨_⟩, ⟨snd_iso⟩⟩ | ⟨⟨fst_iso⟩, ⟨snd_iso⟩⟩
+  have := plus_final snd_iso
+  rcases ih α β with ⟨ih', _⟩
+  have := ih' this
+  trivial
+  have := plus_final snd_iso
+  rcases ih α β with ⟨_, ih'⟩
+  rcases ih' this with ⟨bfinal⟩
+  have final : β ≼f e ⊕ₗ α := final_final_sum bfinal
+  have : e ⊕ₗ α ≼i β := plus_initial fst_iso
+  rcases lindenbaum this final with ⟨iso⟩
+  have := plus_final iso
+  apply nonempty_of_exists
+  use this
+
+theorem final_in_finite_prod_final' : ∀n : Nat,
+∀α : Type u, ∀β : Type v, [LinearOrder α] → [LinearOrder β] →
+  (Fin (n+1) ×ₗ α ≼f Fin (n+1) ×ₗ β → Nonempty (α ≼f β)) ∧ (Fin (n+1) ×ₗ β ≼f Fin (n+1) ×ₗ α → Nonempty (β ≼f α)) := by
   intros n
   induction n with
   | zero =>
-    intros α β _ _ initial
-    simp at initial
-    have : 0 + 1 = 1 := by simp
-    rw [this] at initial
-    rcases (times_one (α := α)) with ⟨times_a⟩
-    rcases (times_one (α := β)) with ⟨times_b⟩
-    have := initial_swap_left initial times_a.symm
-    have := initial_swap_right this times_b
-    apply nonempty_of_exists
-    use this
+    intros α β _ _
+    constructor
+    · exact final_in_finite_prod_final_base_case α β
+    · exact final_in_finite_prod_final_base_case β α
   | succ x ih =>
-    intros α β _ _ initial
-    rcases fin_sum (n := Nat.succ x) (m := 1) with ⟨iso2⟩
-    rcases swap_left iso2 (β := α) with ⟨iso⟩
-    rcases distribute (α := Fin (x+1)) (β := Fin 1) (γ := α) with ⟨iso2⟩
-    have iso := iso.trans iso2
-    rcases times_one (α := α) with ⟨iso2⟩
-    rcases change_iso_right iso2 (α := (Fin (x + 1) ×ₗ α)) with ⟨iso2⟩
-    have iso := iso.trans iso2
-    have new_init := initial_swap_left initial iso.symm
-    apply initial_plus at new_init
-    rcases new_init with ⟨e, ⟨_, ⟨eiso⟩⟩⟩
-    rcases sum_assoc (α := (Fin (x + 1) ×ₗ α)) (β := α) (γ := e) with ⟨assoc⟩
-    have eiso := assoc.symm.trans eiso
-    rcases fin_sum (n := Nat.succ x) (m := 1) with ⟨iso2⟩
-    rcases swap_left iso2 (β := β) with ⟨iso⟩
-    rcases distribute (α := Fin (x+1)) (β := Fin 1) (γ := β) with ⟨iso2⟩
-    have iso := iso.trans iso2
-    rcases times_one (α := β) with ⟨iso2⟩
-    rcases change_iso_right iso2 (α := (Fin (x + 1) ×ₗ β)) with ⟨iso2⟩
-    have iso := iso.trans iso2
-    have iso := eiso.trans iso
-    have refined := sum_refinement iso
-    rcases refined with ⟨e', ⟨_, new_cases⟩⟩
-    rcases new_cases with ⟨⟨fst_iso⟩, ⟨snd_iso⟩⟩ | ⟨⟨fst_iso⟩, ⟨_⟩⟩
-    have := plus_initial fst_iso
-    rcases ih β α this with ⟨binit⟩
-    have final := plus_final snd_iso
-    have : β ≼i α ⊕ₗ e := initial_initial_sum binit
-    rcases lindenbaum this final with ⟨iso⟩
-    have := plus_initial iso.symm
-    apply nonempty_of_exists
-    use this
-    have := plus_initial fst_iso
-    have := ih α β this
-    trivial
+    intros α β _ _
+    constructor
+    · exact final_in_finite_prod_final_induction_step x ih
+    · have : ∀ (α : Type v) (β : Type u) [inst : LinearOrder α] [inst_1 : LinearOrder β],
+    (Lex (Fin (x + 1) × α) ≼f Lex (Fin (x + 1) × β) → Nonempty (α ≼f β)) ∧
+      (Lex (Fin (x + 1) × β) ≼f Lex (Fin (x + 1) × α) → Nonempty (β ≼f α)) := by
+        intros a b _ _
+        have ih := ih b a
+        tauto
+      exact final_in_finite_prod_final_induction_step x this
 
 theorem final_in_finite_prod_final : ∀n : Nat,
-∀α : Type u, ∀β : Type u, [LinearOrder α] → [LinearOrder β] → Fin (n+1) ×ₗ α ≼f Fin (n+1) ×ₗ β → Nonempty (α ≼f β) := by
-  intros n
-  induction n with
-  | zero =>
-    intros α β _ _ final
-    simp at final
-    have : 0 + 1 = 1 := by simp
-    rw [this] at final
-    rcases (times_one (α := α)) with ⟨times_a⟩
-    rcases (times_one (α := β)) with ⟨times_b⟩
-    have := final_swap_left final times_a.symm
-    have := final_swap_right this times_b
-    apply nonempty_of_exists
-    use this
-  | succ x ih =>
-    intros α β _ _ final
-    have : Nat.succ x + 1 = 1 + Nat.succ x := by omega
-    rw [this] at final
-    rcases fin_sum (m := Nat.succ x) (n := 1) with ⟨iso2⟩
-    rcases swap_left iso2 (β := α) with ⟨iso⟩
-    rcases distribute (β := Fin (x+1)) (α := Fin 1) (γ := α) with ⟨iso2⟩
-    have iso := iso.trans iso2
-    rcases times_one (α := α) with ⟨iso2⟩
-    rcases change_iso_left iso2 (β := (Fin (x + 1) ×ₗ α)) with ⟨iso2⟩
-    have iso := iso.trans iso2
-    have new_final := final_swap_left final iso.symm
-    apply final_plus at new_final
-    rcases new_final with ⟨e, ⟨_, ⟨eiso⟩⟩⟩
-    rcases sum_assoc (α := e) (γ := Fin (x + 1) ×ₗ α) (β := α) with ⟨assoc⟩
-    have eiso := assoc.trans eiso
-    rcases fin_sum (m := Nat.succ x) (n := 1) with ⟨iso2⟩
-    rcases swap_left iso2 (β := β) with ⟨iso⟩
-    rcases distribute (β := Fin (x+1)) (α := Fin 1) (γ := β) with ⟨iso2⟩
-    have iso := iso.trans iso2
-    rcases times_one (α := β) with ⟨iso2⟩
-    rcases change_iso_left iso2 (β := (Fin (x + 1) ×ₗ β)) with ⟨iso2⟩
-    have iso := iso.trans iso2
-    have iso := eiso.trans iso
-    have refined := sum_refinement iso
-    rcases refined with ⟨e', ⟨_, new_cases⟩⟩
-    rcases new_cases with ⟨⟨_⟩, ⟨snd_iso⟩⟩ | ⟨⟨fst_iso⟩, ⟨snd_iso⟩⟩
-    have := plus_final snd_iso
-    have := ih α β this
-    trivial
-    have := plus_final snd_iso
-    rcases ih β α this with ⟨bfinal⟩
-    have final : β ≼f e ⊕ₗ α := final_final_sum bfinal
-    have : e ⊕ₗ α ≼i β := plus_initial fst_iso
-    rcases lindenbaum this final with ⟨iso⟩
-    have := plus_final iso
-    apply nonempty_of_exists
-    use this
+∀α : Type u, ∀β : Type v, [LinearOrder α] → [LinearOrder β] →
+(Fin (n+1) ×ₗ α ≼f Fin (n+1) ×ₗ β → Nonempty (α ≼f β)) := by
+  intros n α β _ _
+  rcases final_in_finite_prod_final' n α β with ⟨final, _ ⟩
+  trivial
 
-theorem finite_prod_cancel (α : Type u) (β : Type u) [LinearOrder α] [LinearOrder β] (n : ℕ) :
+theorem finite_prod_cancel (n : ℕ) :
 Fin (n+1) ×ₗ α ≃o Fin (n+1) ×ₗ β → Nonempty (α ≃o β) := by
   intros finite_iso
   rcases initial_in_finite_prod_initial n α β finite_iso with ⟨initial⟩
