@@ -300,10 +300,13 @@ theorem image_of_univ_final : isFinal (g '' univ) := by
   unfold isFinal
   simp
 
+theorem univ_minus_eq_comp {a : Set α} : univ \ a = aᶜ := by
+  rw [diff_eq, univ_inter]
+
 /-
 Complement of initial segment is final
 -/
-theorem comp_initial_final {s : Set α} (hs : isInitial s) : isFinal (univ \ s) := by
+theorem univ_compl_initial_final {s : Set α} (hs : isInitial s) : isFinal (univ \ s) := by
   unfold isFinal
   intros x hx y hy
   unfold isInitial at hs
@@ -313,13 +316,53 @@ theorem comp_initial_final {s : Set α} (hs : isInitial s) : isFinal (univ \ s) 
   have contra := hs y hny x hy
   trivial
 
+theorem compl_initial_final {s : Set α} (hs : isInitial s) : isFinal (sᶜ) := by
+  have := univ_compl_initial_final hs
+  rw [univ_minus_eq_comp] at this
+  trivial
+
 /-
 Complement of final segment is initial
 -/
-theorem comp_final_initial {s : Set α} (hs : isFinal s) : isInitial (univ \ s) := by
+theorem univ_compl_final_initial {s : Set α} (hs : isFinal s) : isInitial (univ \ s) := by
   apply isFinal_to_dual at hs
-  apply comp_initial_final at hs
+  apply univ_compl_initial_final at hs
   trivial
+
+theorem compl_final_initial {s : Set α} (hs : isFinal s) : isInitial (sᶜ) := by
+  have := univ_compl_final_initial hs
+  rw [univ_minus_eq_comp] at this
+  trivial
+
+theorem initial_lt_compl {a : Set α} (ha : isInitial a) :
+  ∀x ∈ a, ∀y ∈ aᶜ, x < y := by
+  intros x hx y hy
+  by_contra hn
+  simp at hn hy
+  rw [le_iff_lt_or_eq] at hn
+  cases' hn with hn hn
+  · exact hy (ha x hx y hn)
+  · rw [hn] at hy
+    contradiction
+
+theorem initial_le_compl {a : Set α} (ha : isInitial a) :
+  ∀x ∈ a, ∀y ∈ aᶜ, x ≤ y := by
+  intros x hx y hy
+  have := initial_lt_compl ha x hx y hy
+  exact LT.lt.le this
+
+theorem compl_lt_final {a : Set α} (ha : isFinal a) :
+  ∀x ∈ (aᶜ : Set α), ∀y ∈ a, x < y := by
+  have := compl_final_initial ha
+  have := initial_lt_compl this
+  rw [compl_compl] at this
+  trivial
+
+theorem compl_le_final {a : Set α} (ha : isFinal a) :
+  ∀x ∈ (aᶜ : Set α), ∀y ∈ a, x ≤ y := by
+  intros x hx y hy
+  have := compl_lt_final ha x hx y hy
+  exact LT.lt.le this
 
 /-
 The union of initial segments is an initial segment
@@ -398,8 +441,10 @@ def iso_to_initial (g : α ≃o β) : α ≼i β :=
       simp at *
   }
 
+/-
 instance : Coe (α ≃o β) (α ≼i β) :=
   ⟨iso_to_initial⟩
+  -/
 
 def iso_to_final (g : α ≃o β) : α ≼f β :=
   {
@@ -414,5 +459,7 @@ def iso_to_final (g : α ≃o β) : α ≼f β :=
       simp at *
   }
 
+/-
 instance : Coe (α ≃o β) (α ≼f β) :=
   ⟨iso_to_final⟩
+  -/

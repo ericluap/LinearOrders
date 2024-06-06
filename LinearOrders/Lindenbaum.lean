@@ -41,7 +41,7 @@ theorem sbAux_initial : ∀ n : ℕ, isInitial (sbAux f g n) := by
   induction' n with n hn
   unfold sbAux
   have g_image_final : isFinal (g '' univ) := by apply image_of_univ_final
-  apply comp_final_initial
+  apply univ_compl_final_initial
   trivial
   unfold sbAux
   have prev_is_initial : isInitial (f '' sbAux f g n) := by

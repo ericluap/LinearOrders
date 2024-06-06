@@ -56,7 +56,7 @@ theorem le_iff' {a b : α ×ₗ β} : a ≤ b ↔ a.1 < b.1 ∨ a.1 = b.1 ∧ a.
     rw [←Prod.Lex.le_iff] at this
     exact this
 
-theorem swap_left (f : α ≃o γ) : Nonempty (α ×ₗ β ≃o γ ×ₗ β) := by
+theorem swap_left_prod (f : α ≃o γ) : Nonempty (α ×ₗ β ≃o γ ×ₗ β) := by
   set q : α ×ₗ β → γ ×ₗ β := λg => (f g.fst, g.snd) with q_def
   have qinj : Function.Injective q := by
     unfold Function.Injective
@@ -369,23 +369,23 @@ lemma initial_in_finite_prod_initial_induction_step (x : ℕ) (ih : ∀ (α : Ty
 Lex (Fin (Nat.succ x + 1) × α) ≼i Lex (Fin (Nat.succ x + 1) × β) → Nonempty (α ≼i β) := by
   intros initial
   rcases fin_sum (n := Nat.succ x) (m := 1) with ⟨iso2⟩
-  rcases swap_left iso2 (β := α) with ⟨iso⟩
+  rcases swap_left_prod iso2 (β := α) with ⟨iso⟩
   rcases distribute (α := Fin (x+1)) (β := Fin 1) (γ := α) with ⟨iso2⟩
   have iso := iso.trans iso2
   rcases times_one (α := α) with ⟨iso2⟩
-  rcases change_iso_right iso2 (α := (Fin (x + 1) ×ₗ α)) with ⟨iso2⟩
+  have iso2 := swap_right iso2 (α := (Fin (x + 1) ×ₗ α))
   have iso := iso.trans iso2
   have new_init := initial_swap_left initial iso.symm
   apply initial_plus at new_init
   rcases new_init with ⟨e, ⟨_, ⟨eiso⟩⟩⟩
-  rcases sum_assoc (α := (Fin (x + 1) ×ₗ α)) (β := α) (γ := e) with ⟨assoc⟩
+  have assoc := sum_assoc (α := (Fin (x + 1) ×ₗ α)) (β := α) (γ := e)
   have eiso := assoc.symm.trans eiso
   rcases fin_sum (n := Nat.succ x) (m := 1) with ⟨iso2⟩
-  rcases swap_left iso2 (β := β) with ⟨iso⟩
+  rcases swap_left_prod iso2 (β := β) with ⟨iso⟩
   rcases distribute (α := Fin (x+1)) (β := Fin 1) (γ := β) with ⟨iso2⟩
   have iso := iso.trans iso2
   rcases times_one (α := β) with ⟨iso2⟩
-  rcases change_iso_right iso2 (α := (Fin (x + 1) ×ₗ β)) with ⟨iso2⟩
+  have iso2 := swap_right iso2 (α := (Fin (x + 1) ×ₗ β))
   have iso := iso.trans iso2
   have iso := eiso.trans iso
   have refined := sum_refinement iso
@@ -456,23 +456,23 @@ lemma final_in_finite_prod_final_induction_step (x : ℕ) (ih : ∀ (α : Type u
   have : Nat.succ x + 1 = 1 + Nat.succ x := by omega
   rw [this] at final
   rcases fin_sum (m := Nat.succ x) (n := 1) with ⟨iso2⟩
-  rcases swap_left iso2 (β := α) with ⟨iso⟩
+  rcases swap_left_prod iso2 (β := α) with ⟨iso⟩
   rcases distribute (β := Fin (x+1)) (α := Fin 1) (γ := α) with ⟨iso2⟩
   have iso := iso.trans iso2
   rcases times_one (α := α) with ⟨iso2⟩
-  rcases change_iso_left iso2 (β := (Fin (x + 1) ×ₗ α)) with ⟨iso2⟩
+  have iso2 := swap_left iso2 (β := (Fin (x + 1) ×ₗ α))
   have iso := iso.trans iso2
   have new_final := final_swap_left final iso.symm
   apply final_plus at new_final
   rcases new_final with ⟨e, ⟨_, ⟨eiso⟩⟩⟩
-  rcases sum_assoc (α := e) (γ := Fin (x + 1) ×ₗ α) (β := α) with ⟨assoc⟩
+  have assoc := sum_assoc (α := e) (γ := Fin (x + 1) ×ₗ α) (β := α)
   have eiso := assoc.trans eiso
   rcases fin_sum (m := Nat.succ x) (n := 1) with ⟨iso2⟩
-  rcases swap_left iso2 (β := β) with ⟨iso⟩
+  rcases swap_left_prod iso2 (β := β) with ⟨iso⟩
   rcases distribute (β := Fin (x+1)) (α := Fin 1) (γ := β) with ⟨iso2⟩
   have iso := iso.trans iso2
   rcases times_one (α := β) with ⟨iso2⟩
-  rcases change_iso_left iso2 (β := (Fin (x + 1) ×ₗ β)) with ⟨iso2⟩
+  have iso2 := swap_left iso2 (β := (Fin (x + 1) ×ₗ β))
   have iso := iso.trans iso2
   have iso := eiso.trans iso
   have refined := sum_refinement iso
@@ -524,7 +524,7 @@ theorem final_in_finite_prod_final : ∀n : Nat,
 theorem finite_prod_cancel (n : ℕ) :
 Fin (n+1) ×ₗ α ≃o Fin (n+1) ×ₗ β → Nonempty (α ≃o β) := by
   intros finite_iso
-  rcases initial_in_finite_prod_initial n α β finite_iso with ⟨initial⟩
-  rcases final_in_finite_prod_final n β α finite_iso.symm with ⟨final⟩
+  rcases initial_in_finite_prod_initial n α β (iso_to_initial finite_iso) with ⟨initial⟩
+  rcases final_in_finite_prod_final n β α (iso_to_final finite_iso.symm) with ⟨final⟩
   have := lindenbaum initial final
   trivial

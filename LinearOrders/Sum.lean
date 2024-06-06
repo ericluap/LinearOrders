@@ -11,141 +11,186 @@ import Mathlib.Data.Set.Basic
 import Mathlib.Data.Sum.Order
 import Mathlib.Data.Set.Subset
 import LinearOrders.Iso
+import LinearOrders.OrderEmbedding
+import LinearOrders.OrderIso
 
 noncomputable section
 open Classical
 open Set
 open Set.Notation
 
-universe u v w x y
+universe u v w x y z
 
-variable {α : Type u} {β : Type v} {γ : Type w} {δ : Type x}
-  [LinearOrder α] [LinearOrder β] [LinearOrder γ] [LinearOrder δ]
+variable {α : Type u} {β : Type v} {γ : Type w} {δ : Type x} {α' : Type y} {β' : Type z}
+  [LinearOrder α] [LinearOrder β] [LinearOrder γ] [LinearOrder δ] [LinearOrder α'] [LinearOrder β']
 
-theorem sum_assoc : Nonempty ((α ⊕ₗ β) ⊕ₗ γ ≃o α ⊕ₗ (β ⊕ₗ γ)) := by
-  set q : (α ⊕ₗ β) ⊕ₗ γ → α ⊕ₗ (β ⊕ₗ γ) := λg =>
-    match g with
-    | Sum.inl (Sum.inl a) => Sum.inlₗ a
-    | Sum.inl (Sum.inr b) => Sum.inrₗ (Sum.inlₗ b)
-    | Sum.inr c => Sum.inrₗ (Sum.inrₗ c)
-    with q_def
-  have qinj : Function.Injective q := by
+def inl : α ↪o α ⊕ₗ β where
+  toFun := Sum.inlₗ
+  inj' := Sum.inl_injective
+  map_rel_iff' := by simp
+
+def inr : β ↪o α ⊕ₗ β where
+  toFun := Sum.inrₗ
+  inj' := Sum.inr_injective
+  map_rel_iff' := by simp
+
+@[simp]
+theorem inl_le_inl_iff {a b : α}: (inl a : α ⊕ₗ β) ≤ inl b ↔ a ≤ b := by simp
+
+@[simp]
+theorem inr_le_inr_iff {a b : β} : (inr a : α ⊕ₗ β) ≤ inr b ↔ a ≤ b := by simp
+
+@[simp]
+theorem inl_lt_inl_iff {a b : α} : (inl a : α ⊕ₗ β) < inl b ↔ a < b := by simp
+
+@[simp]
+theorem inr_lt_inr_iff {a b : β} : (inr a : α ⊕ₗ β) < inr b ↔ a < b := by simp
+
+@[simp]
+theorem not_inr_le_inl {a : α} {b : β} : ¬inr b ≤ inl a := by unfold inl inr; simp
+
+@[simp]
+theorem not_inr_lt_inl [LT α] [LT β] {a : α} {b : β} : ¬inr b < inl a := by unfold inl inr; simp
+
+@[simp]
+theorem inl_le_inr {a : α} {b : β} : inl a ≤ inr b := by unfold inl inr; simp
+
+@[simp]
+theorem inl_lt_inr {a : α} {b : β} : inl a < inr b := by unfold inl inr; simp
+
+@[simp]
+theorem elim_sum_inl (f : α → γ) (g : β → γ) (x : α) :
+  Sum.elim f g (Sum.inlₗ x) = f x := rfl
+
+@[simp]
+theorem elim_sum_inr (f : α → γ) (g : β → γ) (x : β) :
+  Sum.elim f g (Sum.inrₗ x) = g x := rfl
+
+@[simp]
+theorem elim_inl (f : α → γ) (g : β → γ) (x : α) :
+  Sum.elim f g (inl x) = f x := rfl
+
+@[simp]
+theorem elim_inr (f : α → γ) (g : β → γ) (x : β) :
+  Sum.elim f g (inr x) = g x := rfl
+
+abbrev Sum.mapₗ (f : α → α') (g : β → β') (x : α ⊕ₗ β) :=
+  toLex (Sum.map f g x)
+
+@[simp] theorem map_sum_inl (f : α → α') (g : β → β') (x : α) : Sum.mapₗ f g (Sum.inlₗ x) = Sum.inlₗ (f x) := rfl
+
+@[simp] theorem map_sum_inr (f : α → α') (g : β → β') (x : β) : Sum.mapₗ f g (Sum.inrₗ x) = Sum.inrₗ (g x) := rfl
+
+@[simp] theorem map_inl (f : α → α') (g : β → β') (x : α) : Sum.mapₗ f g (inl x) = inl (f x) := rfl
+
+@[simp] theorem map_inr (f : α → α') (g : β → β') (x : β) : Sum.mapₗ f g (inr x) = inr (g x) := rfl
+
+def Lex.sumCasesOn
+    {motive : α ⊕ₗ β → Sort w}
+    (t : α ⊕ₗ β)
+    (inlₗ : (val : α) → motive (inl val))
+    (inrₗ : (val : β) → motive (inr val)) : motive t :=
+  Sum.casesOn t inlₗ inrₗ
+
+@[ext]
+theorem hom_ext {f g : α ⊕ₗ β ↪o γ} (h₁ : f.comp inl = g.comp inl) (h₂ : f.comp inr = g.comp inr) :
+  f = g := by
+  ext a
+  cases' a using Lex.sumCasesOn with a a
+  · apply DFunLike.congr_fun h₁ a
+  · apply DFunLike.congr_fun h₂ a
+
+theorem map_ord_preserving (f : α ↪o α') (g : β ↪o β') :
+  ∀ {a b : α ⊕ₗ β}, Sum.mapₗ f g a ≤ Sum.mapₗ f g b ↔ a ≤ b := by
+  intros a b
+  cases' a using Lex.sumCasesOn with a a <;> cases' b using Lex.sumCasesOn with b b
+  <;> simp
+
+def map (f : α ↪o α') (g : β ↪o β') : α ⊕ₗ β ↪o α' ⊕ₗ β' where
+  toFun := Sum.mapₗ f g
+  inj' := Function.Injective.sum_map f.inj' g.inj'
+  map_rel_iff' := map_ord_preserving f g
+
+@[simp] theorem map_apply_inl (f : α ↪o α') (g : β ↪o β') (x : α) : (inl x).map f g = inl (f x) := rfl
+
+@[simp] theorem map_apply_inr (f : α ↪o α') (g : β ↪o β') (x : β) : (inr x).map f g = inr (g x) := rfl
+
+@[simp] theorem map_comp_inl (f : α ↪o α') (g : β ↪o β') : (map f g).comp inl = (inl : α' ↪o α' ⊕ₗ β').comp f := rfl
+
+@[simp] theorem map_comp_inr (f : α ↪o α') (g : β ↪o β') : (map f g).comp inr = (inr : β' ↪o α' ⊕ₗ β').comp g := rfl
+
+@[simp] theorem map_id_id : map (.id α) (.id β) = .id (α ⊕ₗ β) := by ext a <;> simp
+
+@[simp] theorem map_comp_map {α'' β''} [LinearOrder α''] [LinearOrder β''] (f' : α' ↪o α'') (g' : β' ↪o β'')
+  (f : α ↪o α') (g : β ↪o β') : (map f' g').comp (map f g) = map (f'.comp f) (g'.comp g) :=
+  hom_ext rfl rfl
+
+@[simp] theorem map_map {α'' β''} [LinearOrder α''] [LinearOrder β''] (f' : α' ↪o α'') (g' : β' ↪o β'')
+  (f : α ↪o α') (g : β ↪o β') (x : α ⊕ₗ β) : map f' g' (map f g x) = map (f'.comp f) (g'.comp g) x :=
+  DFunLike.congr_fun (map_comp_map f' g' f g) x
+
+@[simp] theorem map_applied_comp_inl (f : α ↪o α') (g : β ↪o β') (x : α) : (map f g) (inl x) = (map f g).comp inl x := by rfl
+@[simp] theorem map_applied_comp_inr (f : α ↪o α') (g : β ↪o β') (x : β) : (map f g) (inr x) = (map f g).comp inr x := by rfl
+
+def toOrderIso (f : α ↪o β) (g : β ↪o α)
+    (h₁ : g.comp f = OrderEmbedding.id _) (h₂ : f.comp g = OrderEmbedding.id _) : α ≃o β where
+  toFun := f
+  invFun := g
+  left_inv := DFunLike.congr_fun h₁
+  right_inv := DFunLike.congr_fun h₂
+  map_rel_iff' := by simp
+
+theorem sumCongr (f : α ≃o α') (g : β ≃o β') : α ⊕ₗ β ≃o α' ⊕ₗ β' :=
+  toOrderIso (map f g) (map f.symm g.symm) (by ext <;> simp) (by ext <;> simp)
+
+theorem swap_left (f : α ≃o α') : α ⊕ₗ β ≃o α' ⊕ₗ β := sumCongr f (OrderIso.id β)
+
+theorem swap_right (g : β ≃o β') : α ⊕ₗ β ≃o α ⊕ₗ β' := sumCongr (OrderIso.id α) g
+
+def lift (f : α ↪o γ) (g : β ↪o γ) (h : ∀a : α, ∀b : β, f a < g b) : (α ⊕ₗ β) ↪o γ where
+  toFun := Sum.elim f g
+  inj' := by
     unfold Function.Injective
     intros x y hxy
-    simp [q_def] at hxy
-    rcases x with x | x
-    · rcases x with x | x
-      · rcases y with y | y
-        · rcases y with y | y
-          · simp at hxy
-            rw [hxy]
-          · simp at hxy
-        · simp at hxy
-      · rcases y with y | y
-        · rcases y with y | y
-          · simp at hxy
-          · simp at hxy
-            rw [hxy]
-        · simp at hxy
-    · rcases y with y | y
-      · rcases y with y | y
-        · simp at hxy
-        · simp at hxy
-      · simp at hxy
-        rw [hxy]
-  have qsurj : Function.Surjective q := by
-    unfold Function.Surjective
-    intros x
-    rcases x with x | x
-    · use (Sum.inl (Sum.inl x))
-      simp [q_def]
-      change _ = toLex _
-      simp
-    · rcases x with x | x
-      · use (Sum.inl (Sum.inr x))
-        simp [q_def]
-        change _ = toLex _
-        simp
-        change _ = toLex _
-        simp
-      · use (Sum.inr x)
-        simp [q_def]
-        change _ = toLex _
-        simp
-        change _ = toLex _
-        simp
-  have qord : ∀{x y : (α ⊕ₗ β) ⊕ₗ γ}, q x ≤ q y ↔ x ≤ y := by
-    intros x y
-    constructor
-    · intros hxy
-      simp [q_def] at hxy
-      rcases x with x | x
-      · rcases x with x | x
-        · rcases y with y | y
-          · rcases y with y | y
-            · simp at hxy
-              change toLex _ ≤ toLex _
-              simp
-              change toLex _ ≤ toLex _
-              simp
-              trivial
-            · change toLex _ ≤ toLex _
-              simp
-              exact Sum.Lex.inl_le_inr x y
-          · change toLex _ ≤ toLex _
-            simp
-        · rcases y with y | y
-          · rcases y with y | y
-            · simp at hxy
-            · simp at hxy
-              change toLex _ ≤ toLex _
-              simp
-              change toLex _ ≤ toLex _
-              simp
-              trivial
-          · change toLex _ ≤ toLex _
-            simp
-      · rcases y with y | y
-        · rcases y with y | y
-          · simp at hxy
-          · simp at hxy
-        · simp at hxy
-          change toLex _ ≤ toLex _
-          simp
-          trivial
-    · intros hxy
-      simp [q_def]
-      rcases x with x | x
-      · rcases x with x | x
-        · rcases y with y | y
-          · rcases y with y | y
-            · simp
-              change toLex _ ≤ toLex _ at hxy
-              simp at hxy
-              change toLex _ ≤ toLex _ at hxy
-              simp at hxy
-              trivial
-            · simp
-          · simp
-        · rcases y with y | y
-          · rcases y with y | y
-            · contradiction
-            · simp
-              change toLex _ ≤ toLex _ at hxy
-              simp at hxy
-              change toLex _ ≤ toLex _ at hxy
-              simp at hxy
-              trivial
-          · simp
-      · rcases y with y | y
-        · rcases y with y | y
-          · contradiction
-          · contradiction
-        · simp
-          change toLex _ ≤ toLex _ at hxy
-          simp at hxy
-          trivial
-  exact make_iso qinj qsurj qord
+    rcases x with x | x <;> rcases y with y | y <;> simp at hxy <;> try rw [hxy]
+    · have := h x y
+      rw [hxy] at this
+      simp at *
+    · have := h y x
+      rw [hxy] at this
+      simp at *
+  map_rel_iff' := by
+    intros a b
+    cases' a using Lex.sumCasesOn with a a
+    <;> cases' b using Lex.sumCasesOn with b b
+    <;> simp
+    · exact LT.lt.le (h a b)
+    · exact (h b a)
+
+@[simp]
+theorem lift_apply_inl (f : α ↪o γ) (g : β ↪o γ) (h : ∀a : α, ∀b : β, f a < g b) (x : α) : lift f g h (inl x) = f x :=
+  rfl
+
+@[simp]
+theorem lift_apply_inr (f : α ↪o γ) (g : β ↪o γ) (h : ∀a : α, ∀b : β, f a < g b) (x : β) : lift f g h (inr x) = g x :=
+  rfl
+
+@[simp]
+theorem lift_comp_inl (f : α ↪o γ) (g : β ↪o γ) (h : ∀a : α, ∀b : β, f a < g b) : (lift f g h).comp inl = f := rfl
+
+@[simp]
+theorem lift_comp_inr (f : α ↪o γ) (g : β ↪o γ) (h : ∀a : α, ∀b : β, f a < g b) : (lift f g h).comp inr = g := rfl
+
+theorem sum_assoc : (α ⊕ₗ β) ⊕ₗ γ ≃o α ⊕ₗ (β ⊕ₗ γ) :=
+  toOrderIso
+    (lift (map (.id α) inl)
+      ((inr : (β ⊕ₗ γ) ↪o α ⊕ₗ (β ⊕ₗ γ)).comp (inr : γ ↪o (β ⊕ₗ γ)))
+      (by intros a b; cases' a using Lex.sumCasesOn with a a <;> simp))
+    (lift
+      ((inl : (α ⊕ₗ β ↪o ((α ⊕ₗ β) ⊕ₗ γ))).comp inl : α ↪o (α ⊕ₗ β) ⊕ₗ γ)
+      (map inr (.id γ))
+      (by intros a b; cases' b using Lex.sumCasesOn with b b <;> simp))
+    (by ext <;> rfl) (by ext <;> rfl)
 
 section Parts
 variable (f : α ⊕ₗ β ≃o γ)
@@ -243,12 +288,12 @@ def image_right : Set γ := f '' right_part
 theorem image_left_initial : isInitial (image_left f) := by
   unfold image_left
   exact (initial_maps_initial_initial
-          (f : α ⊕ₗ β ≼i γ) left_initial)
+          (iso_to_initial f) left_initial)
 
 theorem image_right_final : isFinal (image_right f) := by
   unfold image_right
   exact (final_maps_final_final
-          (f : α ⊕ₗ β ≼f γ) right_final)
+          (iso_to_final f) right_final)
 
 theorem in_image_left_or_right (x : γ) : (x ∈ image_left f ∧ x ∉ image_right f) ∨ (x ∈ image_right f ∧ x ∉ image_left f) := by
   set inv := (f.invFun x) with inv_def
@@ -363,197 +408,82 @@ theorem image_left_compl_image_right : (image_left f)ᶜ = (image_right f) := by
 section init_final
 variable {a : Set α}
 
-theorem initial_plus_final (ha : isInitial a) :
-Nonempty (a ⊕ₗ (aᶜ : Set α) ≃o α) := by
-  set q : a ⊕ₗ (aᶜ : Set α) → α := λ g =>
-    match g with
-    | Sum.inl g => g
-    | Sum.inr g => g
-    with q_def
-  have qinj : Function.Injective q := by
-    unfold Function.Injective
-    intros c d hcd
-    simp [q_def] at hcd
-    rcases c with c | c
-    rcases d with d | d
-    simp at hcd
-    have := Subtype.eq hcd
-    rw [this]
-    simp at hcd
-    have cin : ↑c ∈ a := c.property
-    have din : ↑d ∈ aᶜ := d.property
-    rw [hcd] at cin
-    contradiction
-    rcases d with d | d
-    simp at hcd
-    have cin := c.property
-    have din := d.property
-    rw [hcd] at cin
-    contradiction
-    simp at hcd
-    have := Subtype.eq hcd
-    rw [this]
-  have qsurj : Function.Surjective q := by
-    unfold Function.Surjective
-    intros b
-    by_cases hb : b ∈ a
-    use (Sum.inl ⟨b, hb⟩)
-    use (Sum.inr ⟨b, hb⟩)
-  have qbij : Function.Bijective q := ⟨qinj, qsurj⟩
-  rw [Function.bijective_iff_has_inverse] at qbij
-  rcases qbij with ⟨h, ⟨left_inv, right_inv⟩⟩
-  set q' : a ⊕ₗ (aᶜ : Set α) ≃ α := ⟨q, h, left_inv, right_inv⟩
-    with q'_def
-  have q'ord : ∀{c d : a ⊕ₗ (aᶜ : Set α)},
-    q' c ≤ q' d ↔ c ≤ d := by
-    intros c d
-    constructor
-    intros hcd
-    rcases c with c | c
-    rcases d with d | d
-    simp [q'_def, q_def] at hcd
-    have : Monotone (toLex ∘ Sum.inl : a → a ⊕ₗ (aᶜ : Set α)):= Sum.Lex.inl_mono
-    unfold Monotone at this
-    have := this hcd
-    trivial
-    have : toLex (Sum.inl c) ≤ toLex (Sum.inr d):= Sum.Lex.inl_le_inr c d
-    trivial
-    rcases d with d | d
-    simp [q'_def, q_def] at hcd
-    rw [le_iff_eq_or_lt] at hcd
-    rcases hcd with heq | hlt
-    have cin := c.property
-    have din := d.property
-    rw [heq] at cin
-    contradiction
-    have := ha d d.property c hlt
-    have cin := c.property
-    contradiction
-    simp [q'_def, q_def] at hcd
-    have : Monotone (toLex ∘ Sum.inr : (aᶜ : Set α) → a ⊕ₗ (aᶜ : Set α)):= Sum.Lex.inr_mono
-    unfold Monotone at this
-    have := this hcd
-    trivial
-    intros hcd
-    rcases c with c | c
-    rcases d with d | d
-    simp [q'_def, q_def]
-    have : toLex (Sum.inl c) ≤ toLex (Sum.inl d) := hcd
-    simp [Sum.Lex.le_def] at this
-    trivial
-    simp [q'_def, q_def]
-    by_contra x
-    simp at x
-    have := ha c c.property d x
-    have din := d.property
-    contradiction
-    rcases d with d | d
-    simp [q'_def, q_def]
-    have : toLex (Sum.inr c) ≤ toLex (Sum.inl d) := hcd
-    simp [Sum.Lex.le_def] at this
-    simp [q'_def, q_def]
-    have : toLex (Sum.inr c) ≤ toLex (Sum.inr d) := hcd
-    simp [Sum.Lex.le_def] at this
-    trivial
-  have orderbij : (a ⊕ₗ (aᶜ : Set α)) ≃o α := RelIso.mk q' q'ord
-  apply nonempty_of_exists
-  use orderbij
+def Elem.val {s : Set α} : Elem s ↪o α where
+  toFun := Subtype.val
+  inj' := by unfold Function.Injective; simp
+  map_rel_iff' := by simp
 
-theorem final_compl_plus_final (ha : isFinal a) :
-Nonempty ((aᶜ : Set α) ⊕ₗ a ≃o α) := by
-  set q : (aᶜ : Set α) ⊕ₗ a → α := λ g =>
-    match g with
-    | Sum.inl g => g
-    | Sum.inr g => g
-    with q_def
-  have qinj : Function.Injective q := by
+def split_map_from_initial (a : Set α) (ha : isInitial a) : α ↪o a ⊕ₗ (aᶜ : Set α) where
+  toFun x := if h : x ∈ a then inl ⟨x, h⟩ else inr ⟨x, h⟩
+  inj' := by
     unfold Function.Injective
-    intros c d hcd
-    simp [q_def] at hcd
-    rcases c with c | c
-    rcases d with d | d
-    simp at hcd
-    have := Subtype.eq hcd
-    rw [this]
-    simp at hcd
-    have din : ↑d ∈ a := d.property
-    have cin : ↑c ∈ aᶜ := c.property
-    rw [hcd] at cin
-    contradiction
-    rcases d with d | d
-    simp at hcd
-    have cin := c.property
-    have din := d.property
-    rw [hcd] at cin
-    contradiction
-    simp at hcd
-    have := Subtype.eq hcd
-    rw [this]
-  have qsurj : Function.Surjective q := by
-    unfold Function.Surjective
-    intros b
-    by_cases hb : b ∈ a
-    use (Sum.inr ⟨b, hb⟩)
-    use (Sum.inl ⟨b, hb⟩)
-  have qbij : Function.Bijective q := ⟨qinj, qsurj⟩
-  rw [Function.bijective_iff_has_inverse] at qbij
-  rcases qbij with ⟨h, ⟨left_inv, right_inv⟩⟩
-  set q' : (aᶜ : Set α) ⊕ₗ a ≃ α := ⟨q, h, left_inv, right_inv⟩
-    with q'_def
-  have q'ord : ∀{c d : (aᶜ : Set α) ⊕ₗ a},
-    q' c ≤ q' d ↔ c ≤ d := by
-    intros c d
-    constructor
-    intros hcd
-    rcases c with c | c
-    rcases d with d | d
-    simp [q'_def, q_def] at hcd
-    have : Monotone (toLex ∘ Sum.inl : (aᶜ : Set α) → (aᶜ : Set α) ⊕ₗ a):= Sum.Lex.inl_mono
-    unfold Monotone at this
-    have := this hcd
-    trivial
-    have : toLex (Sum.inl c) ≤ toLex (Sum.inr d):= Sum.Lex.inl_le_inr c d
-    trivial
-    rcases d with d | d
-    simp [q'_def, q_def] at hcd
-    rw [le_iff_eq_or_lt] at hcd
-    rcases hcd with heq | hlt
-    have cin := c.property
-    have din := d.property
-    rw [heq] at cin
-    contradiction
-    have := ha c c.property d hlt
-    have din := d.property
-    contradiction
-    simp [q'_def, q_def] at hcd
-    have : Monotone (toLex ∘ Sum.inr : a → (aᶜ : Set α) ⊕ₗ a):= Sum.Lex.inr_mono
-    unfold Monotone at this
-    have := this hcd
-    trivial
-    intros hcd
-    rcases c with c | c
-    rcases d with d | d
-    simp [q'_def, q_def]
-    have : toLex (Sum.inl c) ≤ toLex (Sum.inl d) := hcd
-    simp [Sum.Lex.le_def] at this
-    trivial
-    simp [q'_def, q_def]
-    by_contra x
-    simp at x
-    have := ha d d.property c x
-    have cin := c.property
-    contradiction
-    rcases d with d | d
-    simp [q'_def, q_def]
-    have : toLex (Sum.inr c) ≤ toLex (Sum.inl d) := hcd
-    simp [Sum.Lex.le_def] at this
-    simp [q'_def, q_def]
-    have : toLex (Sum.inr c) ≤ toLex (Sum.inr d) := hcd
-    simp [Sum.Lex.le_def] at this
-    trivial
-  have orderbij : (aᶜ : Set α) ⊕ₗ a ≃o α := RelIso.mk q' q'ord
-  apply nonempty_of_exists
-  use orderbij
+    intros x y hxy
+    simp at hxy
+    by_cases h : x ∈ a <;> by_cases g : y ∈ a
+    · simp [dif_pos h, dif_pos g] at hxy; trivial
+    · simp [dif_pos h, dif_neg g] at hxy; trivial
+    · simp [dif_neg h, dif_pos g] at hxy; trivial
+    · simp [dif_neg h, dif_neg g] at hxy; trivial
+  map_rel_iff' := by
+    intros x y
+    simp
+    by_cases h : x ∈ a <;> by_cases g : y ∈ a
+    · simp [dif_pos h, dif_pos g]
+    · simp [dif_pos h, dif_neg g, initial_le_compl ha x h y g]
+    · simp [dif_neg h, dif_pos g, initial_lt_compl ha y g x h]
+    · simp [dif_neg h, dif_neg g]
+
+def split_map_from_final (a : Set α) (ha : isFinal a) : α ↪o (aᶜ : Set α) ⊕ₗ a where
+  toFun x := if h : x ∈ a then inr ⟨x, h⟩ else inl ⟨x, h⟩
+  inj' := by
+    unfold Function.Injective
+    intros x y hxy
+    simp at hxy
+    by_cases h : x ∈ a <;> by_cases g : y ∈ a
+    · simp [dif_pos h, dif_pos g] at hxy; trivial
+    · simp [dif_pos h, dif_neg g] at hxy; trivial
+    · simp [dif_neg h, dif_pos g] at hxy; trivial
+    · simp [dif_neg h, dif_neg g] at hxy; trivial
+  map_rel_iff' := by
+    intros x y
+    simp
+    by_cases h : x ∈ a <;> by_cases g : y ∈ a
+    · simp [dif_pos h, dif_pos g]
+    · simp [dif_pos h, dif_neg g, compl_lt_final ha y g x h]
+    · simp [dif_neg h, dif_pos g, compl_le_final ha x h y g]
+    · simp [dif_neg h, dif_neg g]
+
+def initial_plus_initial_compl (ha : isInitial a) :
+  (a ⊕ₗ (aᶜ : Set α) ≃o α) :=
+  toOrderIso
+    (lift (Elem.val : a ↪o α) (Elem.val : (aᶜ : Set α) ↪o α)
+      (by intros a b; unfold Elem.val; simp
+          exact initial_lt_compl ha a a.property b b.property))
+    (split_map_from_initial a ha)
+    (by ext x <;> simp [split_map_from_initial] <;> by_cases h : Elem.val x ∈ a
+        · simp [dif_pos h]; rfl
+        · have := x.property; contradiction
+        · have := x.property; contradiction
+        · simp [dif_neg h]; rfl)
+    (by ext x; simp [split_map_from_initial]; by_cases h : x ∈ a
+        · simp [dif_pos h]; rfl
+        · simp [dif_neg h]; rfl)
+
+def final_compl_plus_final (ha : isFinal a) :
+  (aᶜ : Set α) ⊕ₗ a ≃o α :=
+  toOrderIso
+    (lift (Elem.val : (aᶜ : Set α) ↪o α) (Elem.val : a ↪o α)
+      (by intros a b; unfold Elem.val; simp
+          exact compl_lt_final ha a a.property b b.property))
+    (split_map_from_final a ha)
+    (by ext x <;> simp [split_map_from_final] <;> by_cases h : Elem.val x ∈ a
+        · have := x.property; contradiction
+        · simp [dif_neg h]; rfl
+        · simp [dif_pos h]; rfl
+        · have := x.property; contradiction)
+    (by ext x; simp [split_map_from_final]; by_cases h : x ∈ a
+        · simp [dif_pos h]; rfl
+        · simp [dif_neg h]; rfl)
 
 end init_final
 
@@ -577,10 +507,10 @@ theorem inr_iff_monotone : ∀(a b : β), ((toLex ∘ Sum.inr) a : α ⊕ₗ β)
     simp
     trivial
 
-theorem left_part_iso : Nonempty (α ≃o (left_part : Set (α ⊕ₗ β))) := by
+theorem left_part_iso : α ≃o (left_part : Set (α ⊕ₗ β)) := by
   set inl_order : α ↪o α ⊕ₗ β := OrderEmbedding.ofMapLEIff (toLex ∘ Sum.inl) inl_iff_monotone
     with inl_order_def
-  have hq : Nonempty (↑univ ≃o ↑(⇑inl_order '' univ)) := (iso_to_image (inl_order) univ)
+  have hq : ↑univ ≃o ↑(⇑inl_order '' univ) := iso_to_image (inl_order) univ
   have inl_order_image : inl_order '' univ = left_part := by
     unfold left_part
     rw [inl_order_def]
@@ -588,17 +518,13 @@ theorem left_part_iso : Nonempty (α ≃o (left_part : Set (α ⊕ₗ β))) := b
     unfold range
     constructor
   rw [inl_order_image] at hq
-  rcases hq with ⟨j⟩
-  have a_iso_univ : Nonempty (α ≃o univ) := univ_iso_type
-  rcases a_iso_univ with ⟨a_iso⟩
-  have iso_trans : α ≃o left_part := (a_iso.trans j)
-  apply nonempty_of_exists
-  use iso_trans
+  have a_iso : α ≃o univ := univ_iso_type
+  exact (a_iso.trans hq)
 
-theorem right_part_iso : Nonempty (β ≃o (right_part : Set (α ⊕ₗ β))) := by
+theorem right_part_iso : β ≃o (right_part : Set (α ⊕ₗ β)) := by
   set inr_order : β ↪o α ⊕ₗ β := OrderEmbedding.ofMapLEIff (toLex ∘ Sum.inr) inr_iff_monotone
     with inr_order_def
-  have hq : Nonempty (↑univ ≃o ↑(⇑inr_order '' univ)) := (iso_to_image (inr_order) univ)
+  have hq : (↑univ ≃o ↑(⇑inr_order '' univ)) := (iso_to_image (inr_order) univ)
   have inr_order_image : inr_order '' univ = right_part := by
     unfold right_part
     rw [inr_order_def]
@@ -606,80 +532,44 @@ theorem right_part_iso : Nonempty (β ≃o (right_part : Set (α ⊕ₗ β))) :=
     unfold range
     constructor
   rw [inr_order_image] at hq
-  rcases hq with ⟨j⟩
-  have b_iso_univ : Nonempty (β ≃o univ) := univ_iso_type
-  rcases b_iso_univ with ⟨b_iso⟩
-  have iso_trans : β ≃o ↑right_part := (b_iso.trans j)
-  apply nonempty_of_exists
-  use iso_trans
+  have b_iso : β ≃o univ := univ_iso_type
+  exact (b_iso.trans hq)
 
-theorem left_iso_image_left : Nonempty (α ≃o image_left f) := by
-  have := (iso_to_image (f.toRelEmbedding) left_part)
-  rw [←exists_true_iff_nonempty] at this
-  rcases this with ⟨z, hz⟩
-  simp at z
+theorem left_iso_image_left : α ≃o image_left f := by
+  have z : left_part ≃o f '' left_part := iso_to_image (f.toRelEmbedding) left_part
   have : image_left f = f '' left_part := by
     unfold image_left
     trivial
   rw [←this] at z
-  rcases (left_part_iso : Nonempty (α ≃o (left_part : Set (α ⊕ₗ β)))) with ⟨a⟩
-  have iso_trans : α ≃o image_left f := a.trans z
-  apply nonempty_of_exists
-  use iso_trans
+  have a : α ≃o (left_part : Set (α ⊕ₗ β)) := left_part_iso
+  exact a.trans z
 
-theorem right_iso_image_right : Nonempty (β ≃o image_right f) := by
-  rcases (iso_to_image (f.toRelEmbedding) right_part) with ⟨z⟩
+theorem right_iso_image_right : β ≃o image_right f := by
+  have z := iso_to_image (f.toRelEmbedding) right_part
   simp at z
   have : image_right f = f '' right_part := by
     unfold image_right
     trivial
   rw [←this] at z
-  rcases (right_part_iso : Nonempty (β ≃o (right_part : Set (α ⊕ₗ β)))) with ⟨a⟩
-  have iso_trans : β ≃o image_right f := a.trans z
-  apply nonempty_of_exists
-  use iso_trans
+  have a : (β ≃o (right_part : Set (α ⊕ₗ β))) := right_part_iso
+  exact (a.trans z)
 
 end Parts
 
-theorem small_left_plus_compl {a b : Set α} :
-Nonempty (↑(b ↓∩ a)ᶜ ≃o ↑(b \ a)) := by
-  set q : ↑(b ↓∩ a)ᶜ → ↑(b \ a) :=
-    λg => ⟨g.val.val, ⟨(g.val.property), (g.property)⟩⟩
-    with q_def
-  have qinj : Function.Injective q := by
-    unfold Function.Injective
-    intros x y hxy
-    simp [q_def] at hxy
-    apply Subtype.eq
-    apply Subtype.eq
-    trivial
-  have qsurj : Function.Surjective q := by
-    unfold Function.Surjective
-    intros x
-    have := x.property
-    rcases this with ⟨x_in_b, x_not_in_a⟩
-    use ⟨⟨x.val, x_in_b⟩, x_not_in_a⟩
-  have qord : ∀{x y : ↑(b ↓∩ a)ᶜ}, (q x ≤ q y) ↔ x ≤ y := by
-    intros x y
-    constructor
-    intros hxy
-    simp [q_def] at hxy
-    trivial
-    intros hxy
-    simp [q_def]
-    trivial
-  exact make_iso qinj qsurj qord
+theorem small_left_plus_compl {a b : Set α} : (↑(b ↓∩ a)ᶜ ≃o ↑(b \ a)) where
+  toFun x := ⟨x.val.val, ⟨x.val.property, x.property⟩⟩
+  invFun x := ⟨⟨x.val, x.property.1⟩, by simp; exact x.property.2⟩
+  left_inv := by unfold Function.LeftInverse; simp
+  right_inv := by unfold Function.RightInverse Function.LeftInverse; simp
+  map_rel_iff' := by simp
 
 theorem initial_inside_sum_iso {a b : Set α}
-(hab : isInitialInside b a) : Nonempty (b ⊕ₗ ↑(a \ b) ≃o a) := by
+(hab : isInitialInside b a) : b ⊕ₗ ↑(a \ b) ≃o ↑a := by
   rcases hab with ⟨b_sub_a, b_initial_a⟩
-  rcases (initial_plus_final b_initial_a) with ⟨iso⟩
-  rcases (subset_cap_iso b_sub_a) with ⟨iso2⟩
-  rcases (swap_iso_left iso2 iso) with ⟨iso⟩
-  rcases (small_left_plus_compl : Nonempty (↑(a ↓∩ b)ᶜ ≃o ↑(a \ b))) with ⟨iso2⟩
-  rcases (swap_iso_right iso2 iso) with ⟨iso⟩
-  apply nonempty_of_exists
-  exists iso
+  have : (a ↓∩ b) ⊕ₗ ↑(a ↓∩ b)ᶜ ≃o a := initial_plus_initial_compl b_initial_a
+  have : b ⊕ₗ ↑(a ↓∩ b)ᶜ ≃o a := (swap_left (subset_cap_iso b_sub_a)).symm.trans this
+  have : b ⊕ₗ ↑(a \ b) ≃o a := (swap_right small_left_plus_compl).symm.trans this
+  exact this
 
 theorem initial_compl_initial {a b : Set α}
 (ha : isInitial a) : isInitial (bᶜ ↓∩ ↑(a \ b)) := by
@@ -695,56 +585,22 @@ x ∉ a := by
   exact hnb (hnab z)
 
 theorem subset_compl_compl {a b : Set α}
-(b_subset_a : b ⊆ a) : Nonempty (↑(bᶜ ↓∩ a \ b)ᶜ ≃o ↑aᶜ) := by
-  set q : ↑(bᶜ ↓∩ a \ b)ᶜ → ↑aᶜ := λg => by
-    have := g.property
-    simp at this
-    exact ⟨g.val, this⟩
-    with q_def
-  have qinj : Function.Injective q := by
-    unfold Function.Injective
-    intros x y hxy
-    simp [q_def] at hxy
-    apply Subtype.eq
-    apply Subtype.eq
-    trivial
-  have qsurj : Function.Surjective q := by
-    unfold Function.Surjective
-    intros x
-    have x_not_in_a := x.property
-    have a_comp_sub_b_comp : aᶜ ⊆ bᶜ := by
-      rw [compl_subset_compl]
-      trivial
-    have x_not_in_b : ↑x ∈ bᶜ := by
-      exact a_comp_sub_b_comp x_not_in_a
-    set j : {x // x ∈ bᶜ} := ⟨↑x, x_not_in_b⟩
-    have j_in : j ∈ (bᶜ ↓∩ a \ b)ᶜ := by
-      simp
-      trivial
-    use ⟨j, j_in⟩
-  have qord : ∀{x y : ↑(bᶜ ↓∩ a \ b)ᶜ}, (q x ≤ q y) ↔ x ≤ y := by
-    intros x y
-    constructor
-    · intros hxy
-      simp [q_def] at hxy
-      trivial
-    · intros hxy
-      simp [q_def]
-      trivial
-  exact make_iso qinj qsurj qord
+(b_subset_a : b ⊆ a) : ↑(bᶜ ↓∩ a \ b)ᶜ ≃o ↑aᶜ where
+  toFun x := ⟨x.val, by have := x.property; simp at this; trivial⟩
+  invFun x := ⟨⟨x.val, compl_subset_compl.2 b_subset_a x.property⟩, by simp; exact x.property⟩
+  left_inv := by unfold Function.LeftInverse; simp
+  right_inv := by unfold Function.RightInverse Function.LeftInverse; simp
+  map_rel_iff' := by simp
 
 theorem initial_inside_sum_compl_iso {a b : Set α}
-(ha : isInitial a) (b_sub_a : b ⊆ a) : Nonempty (↑(a \ b) ⊕ₗ ↑aᶜ ≃o ↑bᶜ) := by
+(ha : isInitial a) (b_sub_a : b ⊆ a) : (↑(a \ b) ⊕ₗ ↑aᶜ ≃o ↑bᶜ) := by
   have a_minus_b_subset : a \ b ⊆ bᶜ := by
     simp [subset_def]
   have a_minus_b_initial : isInitial (bᶜ ↓∩ ↑(a \ b)) := initial_compl_initial ha
-  rcases (initial_plus_final a_minus_b_initial) with ⟨iso⟩
-  rcases (subset_cap_iso a_minus_b_subset) with ⟨iso2⟩
-  rcases (swap_iso_left iso2 iso) with ⟨iso⟩
-  rcases (subset_compl_compl b_sub_a) with ⟨iso2⟩
-  rcases (swap_iso_right iso2 iso) with ⟨iso⟩
-  apply nonempty_of_exists
-  use iso
+  have : bᶜ ↓∩ ↑(a \ b) ⊕ₗ ↑(bᶜ ↓∩ ↑(a \ b))ᶜ ≃o ↑bᶜ := initial_plus_initial_compl a_minus_b_initial
+  have : ↑(a \ b) ⊕ₗ ↑(bᶜ ↓∩ ↑(a \ b))ᶜ ≃o ↑bᶜ := (swap_left (subset_cap_iso a_minus_b_subset)).symm.trans this
+  have : ↑(a \ b) ⊕ₗ ↑aᶜ ≃o ↑bᶜ := (swap_right (subset_compl_compl b_sub_a)).symm.trans this
+  exact this
 
 theorem sum_refinement
   (f : α ⊕ₗ β ≃o γ ⊕ₗ δ)
@@ -756,77 +612,63 @@ theorem sum_refinement
   · set e := (image_left f) \ left_part with e_def
     use e, Subtype.instLinearOrder e
     left
-    have first_part : Nonempty (γ ⊕ₗ e ≃o α) := by
-      rw [←exists_true_iff_nonempty]
-      rcases (initial_inside_sum_iso h) with ⟨iso⟩
+    have first_part : γ ⊕ₗ e ≃o α := by
+      have iso := initial_inside_sum_iso h
       rw [←e_def] at iso
-      rcases (left_iso_image_left f) with ⟨w⟩
-      rcases (left_part_iso : Nonempty (γ ≃o (left_part : Set (γ ⊕ₗ δ)))) with ⟨q⟩
-      rcases (nonempty_iso_trans (swap_iso_left q.symm iso) w.symm) with ⟨iso⟩
-      use iso
-    have second_part : Nonempty (e ⊕ₗ β ≃o δ) := by
+      have w := left_iso_image_left f
+      have q : γ ≃o (left_part : Set (γ ⊕ₗ δ)) := left_part_iso
+      exact ((swap_left q.symm (β := e)).symm.trans iso).trans (w.symm)
+    have second_part : e ⊕ₗ β ≃o δ := by
       rcases h with ⟨left_subset_image, _⟩
-      rcases (initial_inside_sum_compl_iso (image_left_initial f) left_subset_image)
-        with ⟨iso⟩
-      rcases (equal_iso e_def) with ⟨iso2⟩
-      rcases (swap_iso_left iso2.symm iso) with ⟨iso⟩
-      rcases (equal_iso (image_left_compl_image_right f)) with ⟨iso2⟩
-      rcases (swap_iso_right iso2 iso) with ⟨iso⟩
-      rcases (right_iso_image_right f) with ⟨iso2⟩
-      rcases (swap_iso_right iso2.symm iso) with ⟨iso⟩
-      rcases (equal_iso (left_compl_right : (left_partᶜ = (right_part : Set (γ ⊕ₗ δ)))))
-        with ⟨iso2⟩
+      have iso := initial_inside_sum_compl_iso (image_left_initial f) left_subset_image
+      have iso2 := equal_iso e_def
+      have iso := swap_left iso2.symm (β := ↑(image_left f)ᶜ).symm.trans iso
+      have iso2 := equal_iso (image_left_compl_image_right f)
+      have iso := (swap_right iso2 (α := e)).symm.trans iso
+      have iso2 := right_iso_image_right f
+      have iso := (swap_right iso2.symm (α := e)).symm.trans iso
+      have iso2 := equal_iso (left_compl_right : (left_partᶜ = (right_part : Set (γ ⊕ₗ δ))))
       have iso := iso.trans iso2
-      rcases (right_part_iso : Nonempty (δ ≃o ↑(right_part : Set (γ ⊕ₗ δ))))
-        with ⟨iso2⟩
-      have iso := iso.trans iso2.symm
-      apply nonempty_of_exists
-      use iso
-    constructor
-    trivial
-    trivial
+      have iso2 : δ ≃o ↑(right_part : Set (γ ⊕ₗ δ)) := right_part_iso
+      exact iso.trans iso2.symm
+    constructor <;> apply nonempty_of_exists
+    use first_part
+    use second_part
   · set e := left_part \ (image_left f) with e_def
     use e, Subtype.instLinearOrder e
     right
-    have first_part : Nonempty (α ⊕ₗ e ≃o γ) := by
-      rcases (initial_inside_sum_iso h) with ⟨iso⟩
-      rcases (left_iso_image_left f) with ⟨iso2⟩
-      rcases (swap_iso_left iso2.symm iso) with ⟨iso⟩
-      rcases (left_part_iso : Nonempty (γ ≃o (left_part : Set (γ ⊕ₗ δ)))) with ⟨iso2⟩
+    have first_part : α ⊕ₗ e ≃o γ := by
+      have iso := initial_inside_sum_iso h
+      have iso2 := left_iso_image_left f
+      have iso := (swap_left iso2.symm).symm.trans iso
+      have iso2 : γ ≃o (left_part : Set (γ ⊕ₗ δ)) := left_part_iso
       have iso := iso.trans iso2.symm
-      rcases (equal_iso e_def) with ⟨iso2⟩
-      rcases (swap_iso_right iso2.symm iso) with ⟨iso⟩
-      apply nonempty_of_exists
-      use iso
-    have second_part : Nonempty (e ⊕ₗ δ ≃o β) := by
+      have iso2 := equal_iso e_def
+      exact (swap_right iso2.symm).symm.trans iso
+    have second_part : e ⊕ₗ δ ≃o β := by
       rcases h with ⟨image_subset_left, _⟩
-      rcases (initial_inside_sum_compl_iso left_initial image_subset_left)
-        with ⟨iso⟩
-      rcases (equal_iso e_def) with ⟨iso2⟩
-      rcases (swap_iso_left iso2.symm iso) with ⟨iso⟩
-      rcases (equal_iso (image_left_compl_image_right f)) with ⟨iso2⟩
+      have iso := initial_inside_sum_compl_iso left_initial image_subset_left
+      have iso2 := equal_iso e_def
+      have iso := (swap_left iso2.symm).symm.trans iso
+      have iso2 := equal_iso (image_left_compl_image_right f)
       have iso := iso.trans iso2
-      rcases (right_iso_image_right f) with ⟨iso2⟩
+      have iso2 := right_iso_image_right f
       have iso := iso.trans iso2.symm
-      rcases (equal_iso (left_compl_right : (left_partᶜ = (right_part : Set (γ ⊕ₗ δ)))))
-        with ⟨iso2⟩
-      rcases (swap_iso_right iso2 iso) with ⟨iso⟩
-      rcases (right_part_iso : Nonempty (δ ≃o ↑(right_part : Set (γ ⊕ₗ δ))))
-        with ⟨iso2⟩
-      rcases (swap_iso_right iso2.symm iso) with ⟨iso⟩
-      apply nonempty_of_exists
-      use iso
-    constructor
-    trivial
-    trivial
+      have iso2 := equal_iso (left_compl_right : (left_partᶜ = (right_part : Set (γ ⊕ₗ δ))))
+      have iso := (swap_right iso2).symm.trans iso
+      have iso2 : δ ≃o ↑(right_part : Set (γ ⊕ₗ δ)) := right_part_iso
+      exact (swap_right iso2.symm).symm.trans iso
+    constructor <;> apply nonempty_of_exists
+    use first_part
+    use second_part
 
 theorem initial_plus (f : α ≼i β) :
 ∃e : Type v, ∃s : LinearOrder e, Nonempty (α ⊕ₗ e ≃o β) := by
   use ↑(f '' univ)ᶜ, Subtype.instLinearOrder (f '' univ)ᶜ
   have := image_of_univ_initial f
-  rcases (initial_plus_final this) with ⟨iso⟩
-  rcases (type_iso_image f.toRelEmbedding) with ⟨iso2⟩
-  rcases (swap_iso_left iso2.symm iso) with ⟨iso⟩
+  have iso := initial_plus_initial_compl this
+  have iso2 := type_iso_image f.toRelEmbedding
+  have iso := (swap_left iso2.symm).symm.trans iso
   apply nonempty_of_exists
   use iso
 
@@ -834,9 +676,9 @@ theorem final_plus (f : α ≼f β) :
 ∃e : Type v, ∃s : LinearOrder e, Nonempty (e ⊕ₗ α ≃o β) := by
   use ↑(f '' univ)ᶜ, Subtype.instLinearOrder (f '' univ)ᶜ
   have := image_of_univ_final f
-  rcases (final_compl_plus_final this) with ⟨iso⟩
-  rcases (type_iso_image f.toRelEmbedding) with ⟨iso2⟩
-  rcases (swap_iso_right iso2.symm iso) with ⟨iso⟩
+  have iso := final_compl_plus_final this
+  have iso2 := type_iso_image f.toRelEmbedding
+  have iso := (swap_right iso2.symm).symm.trans iso
   apply nonempty_of_exists
   use iso
 
