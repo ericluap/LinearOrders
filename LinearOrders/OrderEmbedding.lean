@@ -1,3 +1,4 @@
+import Mathlib.Data.Set.Basic
 import Mathlib.Order.Hom.Basic
 
 namespace OrderEmbedding
@@ -29,3 +30,8 @@ theorem comp_id (f : α ↪o β) : f.comp (.id α) = f :=
 @[simp]
 theorem id_comp (f : α ↪o β) : (OrderEmbedding.id β).comp f = f :=
   RelEmbedding.ext fun _ => rfl
+
+def Elem.val {s : Set α} : Set.Elem s ↪o α where
+  toFun := Subtype.val
+  inj' := by unfold Function.Injective; simp
+  map_rel_iff' := by simp
