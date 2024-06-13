@@ -11,3 +11,5 @@ If $X$ and $Y$ are linear orders, $n \in \mathbb{N}$, and $nX \cong nY$, then $X
 ### Theorem (Lindenbaum)
 
 If $X$ and $Y$ are linear orders such that $X$ embeds in an initial segment of $Y$ and $Y$ embeds in a final segment of $X$, then $X \cong Y$.
+
+[Here are the high level proofs that parallel how the proofs are formalized.](Summary_of_Formalization.pdf)
