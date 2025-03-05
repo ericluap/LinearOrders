@@ -132,16 +132,16 @@ def toOrderIso (f : α ↪o β) (g : β ↪o α)
   right_inv := DFunLike.congr_fun h₂
   map_rel_iff' := by simp
 
-theorem sumCongr (f : α ≃o α') (g : β ≃o β') : α ⊕ₗ β ≃o α' ⊕ₗ β' :=
+def sumCongr (f : α ≃o α') (g : β ≃o β') : α ⊕ₗ β ≃o α' ⊕ₗ β' :=
   toOrderIso (map f g) (map f.symm g.symm) (by ext <;> simp) (by ext <;> simp)
 
-theorem change_left (f : α ≃o α') : α ⊕ₗ β ≃o α' ⊕ₗ β := sumCongr f (OrderIso.id β)
+def change_left (f : α ≃o α') : α ⊕ₗ β ≃o α' ⊕ₗ β := sumCongr f (OrderIso.id β)
 
-theorem change_right (g : β ≃o β') : α ⊕ₗ β ≃o α ⊕ₗ β' := sumCongr (OrderIso.id α) g
+def change_right (g : β ≃o β') : α ⊕ₗ β ≃o α ⊕ₗ β' := sumCongr (OrderIso.id α) g
 
-theorem swap_left (f : α ≃o α') (g : α ⊕ₗ β ≃o γ) : α' ⊕ₗ β ≃o γ := (change_left f).symm.trans g
+def swap_left (f : α ≃o α') (g : α ⊕ₗ β ≃o γ) : α' ⊕ₗ β ≃o γ := (change_left f).symm.trans g
 
-theorem swap_right (g : β ≃o β') (f : α ⊕ₗ β ≃o γ) : α ⊕ₗ β' ≃o γ := (change_right g).symm.trans f
+def swap_right (g : β ≃o β') (f : α ⊕ₗ β ≃o γ) : α ⊕ₗ β' ≃o γ := (change_right g).symm.trans f
 
 def lift (f : α ↪o γ) (g : β ↪o γ) (h : ∀a : α, ∀b : β, f a < g b) : (α ⊕ₗ β) ↪o γ where
   toFun := Sum.elim f g
@@ -177,7 +177,7 @@ theorem lift_comp_inl (f : α ↪o γ) (g : β ↪o γ) (h : ∀a : α, ∀b : �
 @[simp]
 theorem lift_comp_inr (f : α ↪o γ) (g : β ↪o γ) (h : ∀a : α, ∀b : β, f a < g b) : (lift f g h).comp inr = g := rfl
 
-theorem sum_assoc : (α ⊕ₗ β) ⊕ₗ γ ≃o α ⊕ₗ (β ⊕ₗ γ) :=
+def sum_assoc : (α ⊕ₗ β) ⊕ₗ γ ≃o α ⊕ₗ (β ⊕ₗ γ) :=
   toOrderIso
     (lift (map (.id α) inl)
       ((inr : (β ⊕ₗ γ) ↪o α ⊕ₗ (β ⊕ₗ γ)).comp (inr : γ ↪o (β ⊕ₗ γ)))
@@ -309,13 +309,14 @@ theorem in_image_left_or_right (x : γ) : (x ∈ image_left f ∧ x ∉ image_ri
       rw [←h]
       simp [inv_def]
     · simp [image_right]
-      intros hz
-      rcases hz with ⟨z, hz1, _⟩ | ⟨z, _, hz2⟩
-      · unfold right_part at hz1
+      constructor
+      · intros z hz1
+        unfold right_part at hz1
         simp at hz1
         rcases hz1 with ⟨q, hq⟩
         contradiction
-      · have := congr_arg f.invFun hz2
+      · intros z hz2 q
+        have := congr_arg f.invFun q
         rw [←inv_def, h] at this
         simp at this
         contradiction
@@ -326,13 +327,14 @@ theorem in_image_left_or_right (x : γ) : (x ∈ image_left f ∧ x ∉ image_ri
       rw [←h]
       simp [inv_def]
     · simp [image_left]
-      intros hz
-      rcases hz with ⟨z, _, hz2⟩ | ⟨z, hz1, _⟩
-      · have := congr_arg f.invFun hz2
+      constructor
+      · intros z hz q
+        have := congr_arg f.invFun q
         rw [←inv_def, h] at this
         simp at this
         contradiction
-      · unfold left_part at hz1
+      · intros z hz1
+        unfold left_part at hz1
         simp at hz1
         rcases hz1 with ⟨q,hq⟩
         contradiction
@@ -451,19 +453,19 @@ def final_compl_plus_final (ha : isFinal a) :
 
 end init_final
 
-theorem left_part_iso : α ≃o (left_part : Set (α ⊕ₗ β)) := by
+def left_part_iso : α ≃o (left_part : Set (α ⊕ₗ β)) := by
   have hq : ↑univ ≃o ↑(⇑inl '' univ) := iso_to_image inl univ (β := α ⊕ₗ β)
   have inl_order_image : (inl : α ↪o α ⊕ₗ β) '' univ = left_part := by constructor
   rw [inl_order_image] at hq
   exact (univ_iso_type.trans hq)
 
-theorem right_part_iso : β ≃o (right_part : Set (α ⊕ₗ β)) := by
+def right_part_iso : β ≃o (right_part : Set (α ⊕ₗ β)) := by
   have hq : (↑univ ≃o ↑(⇑inr '' univ)) := iso_to_image inr univ (β := α ⊕ₗ β)
   have inr_order_image : (inr : β ↪o α ⊕ₗ β) '' univ = right_part := by constructor
   rw [inr_order_image] at hq
   exact (univ_iso_type.trans hq)
 
-theorem left_iso_image_left : α ≃o image_left f := by
+def left_iso_image_left : α ≃o image_left f := by
   have z : left_part ≃o f '' left_part := iso_to_image (f.toRelEmbedding) left_part
   have : image_left f = f '' left_part := by
     unfold image_left
@@ -472,7 +474,7 @@ theorem left_iso_image_left : α ≃o image_left f := by
   have a : α ≃o (left_part : Set (α ⊕ₗ β)) := left_part_iso
   exact a.trans z
 
-theorem right_iso_image_right : β ≃o image_right f := by
+def right_iso_image_right : β ≃o image_right f := by
   have z := iso_to_image f right_part (α := α ⊕ₗ β) (β := γ)
   simp at z
   have : image_right f = f '' right_part := by simp [image_right]
@@ -481,14 +483,14 @@ theorem right_iso_image_right : β ≃o image_right f := by
 
 end Parts
 
-theorem small_left_plus_compl {a b : Set α} : (↑(b ↓∩ a)ᶜ ≃o ↑(b \ a)) where
+def small_left_plus_compl {a b : Set α} : (↑(b ↓∩ a)ᶜ ≃o ↑(b \ a)) where
   toFun x := ⟨x.val.val, ⟨x.val.property, x.property⟩⟩
   invFun x := ⟨⟨x.val, x.property.1⟩, by simp; exact x.property.2⟩
   left_inv := by unfold Function.LeftInverse; simp
   right_inv := by unfold Function.RightInverse Function.LeftInverse; simp
   map_rel_iff' := by simp
 
-theorem initial_inside_sum_iso {a b : Set α}
+def initial_inside_sum_iso {a b : Set α}
 (hab : isInitialInside b a) : b ⊕ₗ ↑(a \ b) ≃o ↑a := by
   rcases hab with ⟨b_sub_a, b_initial_a⟩
   have : (a ↓∩ b) ⊕ₗ ↑(a ↓∩ b)ᶜ ≃o a := initial_plus_initial_compl b_initial_a
@@ -503,7 +505,7 @@ theorem initial_compl_initial {a b : Set α}
   simp at *
   exact (ha x hx y hy)
 
-theorem subset_compl_compl {a b : Set α}
+def subset_compl_compl {a b : Set α}
 (b_subset_a : b ⊆ a) : ↑(bᶜ ↓∩ a \ b)ᶜ ≃o ↑aᶜ where
   toFun x := ⟨x.val, by have := x.property; simp at this; trivial⟩
   invFun x := ⟨⟨x.val, compl_subset_compl.2 b_subset_a x.property⟩, by simp; exact x.property⟩
@@ -511,7 +513,7 @@ theorem subset_compl_compl {a b : Set α}
   right_inv := by unfold Function.RightInverse Function.LeftInverse; simp
   map_rel_iff' := by simp
 
-theorem initial_inside_sum_compl_iso {a b : Set α}
+def initial_inside_sum_compl_iso {a b : Set α}
 (ha : isInitial a) (b_sub_a : b ⊆ a) : (↑(a \ b) ⊕ₗ ↑aᶜ ≃o ↑bᶜ) := by
   have a_minus_b_subset : a \ b ⊆ bᶜ := by
     simp [subset_def]
@@ -585,10 +587,10 @@ theorem final_plus (f : α ≼f β) :
   apply nonempty_of_exists
   use iso
 
-theorem plus_initial (f : α ⊕ₗ β ≃o γ) : α ≼i γ where
+def plus_initial (f : α ⊕ₗ β ≃o γ) : α ≼i γ where
   toFun x := f (inl x)
   inj' := by simp [Function.Injective]
-  init' := by
+  mem_range_of_rel' := by
     simp; intros a b hab
     cases' g : (f.invFun b) using Lex.sumCasesOn with z z
     use z
@@ -597,7 +599,7 @@ theorem plus_initial (f : α ⊕ₗ β ≃o γ) : α ≼i γ where
     simp at this
   map_rel_iff' := by simp
 
-theorem plus_final (f : α ⊕ₗ β ≃o γ) : β ≼f γ where
+def plus_final (f : α ⊕ₗ β ≃o γ) : β ≼f γ where
   toFun x := f (inr x)
   inj' := by simp [Function.Injective]
   final' := by
@@ -609,13 +611,13 @@ theorem plus_final (f : α ⊕ₗ β ≃o γ) : β ≼f γ where
     simp [←g]
   map_rel_iff' := by simp
 
-theorem initial_initial_sum (f : α ≼i β) : α ≼i β ⊕ₗ γ := by
+def initial_initial_sum (f : α ≼i β) : α ≼i β ⊕ₗ γ := by
   have : β ⊕ₗ γ ≃o β ⊕ₗ γ := OrderIso.refl (Lex (β ⊕ γ))
   have : β ≼i β ⊕ₗ γ := plus_initial this
   have : α ≼i β ⊕ₗ γ := f.trans this
   trivial
 
-theorem final_final_sum (f : α ≼f β) : α ≼f γ ⊕ₗ β := by
+def final_final_sum (f : α ≼f β) : α ≼f γ ⊕ₗ β := by
   have : γ ⊕ₗ β ≃o γ ⊕ₗ β := OrderIso.refl (Lex (γ ⊕ β))
   have : β ≼f γ ⊕ₗ β := plus_final this
   have : α ≼f γ ⊕ₗ β := f.trans this

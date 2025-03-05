@@ -1,8 +1,6 @@
-import Mathlib.Init.Order.LinearOrder
 import Mathlib.Order.Hom.Basic
 import Mathlib.Order.InitialSeg
 import Mathlib.Data.Finset.Basic
-import Mathlib.Init.Set
 import Mathlib.Data.Set.Subset
 
 noncomputable section
@@ -62,7 +60,7 @@ def FinalSeg_to_dual : βᵒᵈ ≼i αᵒᵈ  :=
   {
     toFun := g.toFun
     inj' := g.inj',
-    init' := by
+    mem_range_of_rel' := by
       intros x y z
       simp at *
       exact g.final' x y z
@@ -79,14 +77,14 @@ def InitialSeg_to_dual : αᵒᵈ ≼f βᵒᵈ :=
     final' := by
       intros x y z
       simp at *
-      exact f.init' x y z
+      exact f.mem_range_of_rel' x y z
     map_rel_iff' := by
       simp at *
       intros x y
       exact RelEmbedding.map_rel_iff f.toRelEmbedding
   }
 
-theorem initial_swap_left [LinearOrder γ] (q : γ ≃o α) :
+def initial_swap_left [LinearOrder γ] (q : γ ≃o α) :
 γ ≼i β := by
   set m : γ → β := λg => f (q g) with m_def
   have : Function.Injective m := by
@@ -118,14 +116,14 @@ theorem initial_swap_left [LinearOrder γ] (q : γ ≃o α) :
     intros a b hab
     simp [m''_def, m'_def, m_def]
     simp [m''_def, m'_def, m_def] at hab
-    rcases f.init' (q a) b hab with ⟨z, hz⟩
+    rcases f.mem_range_of_rel' (q a) b hab with ⟨z, hz⟩
     simp at hz
     use (q.invFun z)
     simp
     trivial
   exact ⟨m'', init'⟩
 
-theorem final_swap_left [LinearOrder γ] (f : α ≼f β) (q : γ ≃o α) :
+def final_swap_left [LinearOrder γ] (f : α ≼f β) (q : γ ≃o α) :
 γ ≼f β := by
   set m : γ → β := λg => f (q g) with m_def
   have : Function.Injective m := by
@@ -162,7 +160,7 @@ theorem final_swap_left [LinearOrder γ] (f : α ≼f β) (q : γ ≃o α) :
     trivial
   exact ⟨m'', final'⟩
 
-theorem initial_swap_right [LinearOrder γ] (q : β ≃o γ) :
+def initial_swap_right [LinearOrder γ] (q : β ≃o γ) :
 α ≼i γ := by
   set m : α → γ := λg => q (f g) with m_def
   have : Function.Injective m := by
@@ -195,7 +193,7 @@ theorem initial_swap_right [LinearOrder γ] (q : β ≃o γ) :
       simp
       trivial
     simp at this
-    rcases f.init' a z this with ⟨j, hj⟩
+    rcases f.mem_range_of_rel' a z this with ⟨j, hj⟩
     simp at hj
     use j
     rw [hj]
@@ -203,7 +201,7 @@ theorem initial_swap_right [LinearOrder γ] (q : β ≃o γ) :
     simp
   exact ⟨m'', init'⟩
 
-theorem final_swap_right [LinearOrder γ] (f : α ≼f β) (q : β ≃o γ) :
+def final_swap_right [LinearOrder γ] (f : α ≼f β) (q : β ≃o γ) :
 α ≼f γ := by
   set m : α → γ := λg => q (f g) with m_def
   have : Function.Injective m := by
@@ -270,7 +268,7 @@ theorem initial_maps_initial_initial {s : Set α} (hs : isInitial s) : isInitial
   obtain ⟨w_in_s, fw_x⟩ := hw
   rw [←fw_x] at hy
   have hy' : y ≤ f w := le_of_lt hy
-  have hf := (f.init' w y hy')
+  have hf := (f.mem_range_of_rel' w y hy')
   obtain ⟨z, hz⟩ := hf
   simp at *
   rw [←hz] at hy
@@ -432,11 +430,9 @@ def iso_to_initial (g : α ≃o β) : α ≼i β :=
   {
     toFun := g.toFun
     inj' := g.left_inv.injective,
-    init' := by
+    mem_range_of_rel' := by
       intros _ b _
       simp at *
-      use (g.invFun b)
-      apply g.right_inv
     map_rel_iff' := by
       simp at *
   }
@@ -458,8 +454,3 @@ def iso_to_final (g : α ≃o β) : α ≼f β :=
     map_rel_iff' := by
       simp at *
   }
-
-/-
-instance : Coe (α ≃o β) (α ≼f β) :=
-  ⟨iso_to_final⟩
-  -/

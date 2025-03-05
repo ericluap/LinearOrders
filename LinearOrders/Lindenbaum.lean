@@ -1,4 +1,3 @@
-import Mathlib.Init.Order.LinearOrder
 import Mathlib.Order.Hom.Basic
 import Mathlib.Order.InitialSeg
 import Mathlib.Data.Finset.Basic
@@ -165,7 +164,7 @@ theorem sb_surjective [Nonempty β] (hg : Function.Injective g) : Function.Surje
       have : x ∈ A := by
         rw [A_def, sbSet, mem_iUnion]
         exact ⟨n, xmem⟩
-      simp only [h_def, sbFun, if_pos this]
+      simp [h_def, sbFun, ←A_def, this]
       trivial
       apply hn
       trivial
@@ -346,8 +345,7 @@ theorem lindenbaum {α : Type u} {β : Type v}
   rcases h_bij with ⟨q, ⟨left_inv, right_inv⟩⟩
   set q : α ≃ β := ⟨h, q, left_inv, right_inv⟩ with q_def
   have : q = h := by
-    rw [h_def, q_def]
-    simp
+    simp [q_def, h_def]
   have orderbij : α ≃o β := RelIso.mk q (order_preserving f g q this)
   apply nonempty_of_exists
   use orderbij

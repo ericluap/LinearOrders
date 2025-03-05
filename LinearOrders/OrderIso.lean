@@ -15,5 +15,5 @@ def id (α : Type*) [LinearOrder α] : α ≃o α where
   left_inv := by unfold Function.LeftInverse; simp
   right_inv := by unfold Function.RightInverse; unfold Function.LeftInverse; simp
 
-theorem ofSurjective (f : α ↪o β) (hf : Function.Surjective f) : (α ≃o β) :=
+noncomputable def ofSurjective (f : α ↪o β) (hf : Function.Surjective f) : (α ≃o β) :=
  { Equiv.ofBijective f (And.intro f.inj' hf) with map_rel_iff' := f.map_rel_iff'}

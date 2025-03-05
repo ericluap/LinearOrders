@@ -1,4 +1,3 @@
-import Mathlib.Init.Order.LinearOrder
 import Mathlib.Order.Hom.Basic
 import Mathlib.Order.Hom.Set
 import Mathlib.Order.InitialSeg
@@ -49,17 +48,17 @@ theorem nonempty_iso_trans : Nonempty (α ≃o β) -> β ≃o γ -> Nonempty (α
   apply nonempty_of_exists
   use (x.trans y)
 
-theorem iso_to_image (f : α ↪o β) (a : Set α) :
+def iso_to_image (f : α ↪o β) (a : Set α) :
   a ≃o f '' a := OrderIso.ofSurjective
     (⟨⟨fun x => ⟨f x, by simp⟩, by simp [Function.Injective]⟩, by simp⟩)
     (by simp [Function.Surjective])
 
-theorem univ_iso_type : α ≃o (univ : Set α) := OrderIso.ofSurjective
+def univ_iso_type : α ≃o (univ : Set α) := OrderIso.ofSurjective
     ⟨⟨fun x => ⟨OrderEmbedding.id α x, by simp⟩, by simp [Function.Injective]⟩, by simp⟩
     (by simp [Function.Surjective])
 
 
-theorem type_iso_image (f : α ↪o β) : α ≃o f '' univ := univ_iso_type.trans (iso_to_image f univ)
+def type_iso_image (f : α ↪o β) : α ≃o f '' univ := univ_iso_type.trans (iso_to_image f univ)
 
 def subset_cap_iso {a b : Set α} (ha : a ⊆ b) : (b ↓∩ a ≃o a) where
   toFun x := ⟨x, x.property⟩
@@ -68,7 +67,7 @@ def subset_cap_iso {a b : Set α} (ha : a ⊆ b) : (b ↓∩ a ≃o a) where
   right_inv := by unfold Function.RightInverse Function.LeftInverse; simp
   map_rel_iff' := by simp
 
-theorem equal_iso {a b : Set α} (eq : a = b) :
+def equal_iso {a b : Set α} (eq : a = b) :
   a ≃o b where
   toFun x := ⟨x, by simp [←eq]⟩
   invFun x := ⟨x, by simp [eq]⟩

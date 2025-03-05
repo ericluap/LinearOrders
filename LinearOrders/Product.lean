@@ -1,4 +1,3 @@
-import Mathlib.Init.Order.LinearOrder
 import Mathlib.Order.Hom.Basic
 import Mathlib.Order.Hom.Set
 import Mathlib.Order.InitialSeg
@@ -45,7 +44,9 @@ theorem le_iff' {a b : α ×ₗ β} : a ≤ b ↔ a.1 < b.1 ∨ a.1 = b.1 ∧ a.
     have : a.1 < b.1 ∨ a.1 = b.1 ∧ a.2 ≤ b.2 := by
       left
       exact h
-    rw [←Prod.Lex.le_iff] at this
+    change (ofLex a).1 < (ofLex b).1 ∨
+      (ofLex a).1 = (ofLex b.1) ∧ (ofLex a).2 ≤ (ofLex b).2 at this
+    rw [Prod.Lex.le_iff]
     exact this
     rcases h with ⟨l, r⟩
     have : a.1 < b.1 ∨ a.1 = b.1 ∧ a.2 ≤ b.2 := by
@@ -53,7 +54,9 @@ theorem le_iff' {a b : α ×ₗ β} : a ≤ b ↔ a.1 < b.1 ∨ a.1 = b.1 ∧ a.
       constructor
       exact l
       exact r
-    rw [←Prod.Lex.le_iff] at this
+    change (ofLex a).1 < (ofLex b).1 ∨
+      (ofLex a).1 = (ofLex b.1) ∧ (ofLex a).2 ≤ (ofLex b).2 at this
+    rw [Prod.Lex.le_iff]
     exact this
 
 theorem swap_left_prod (f : α ≃o γ) : Nonempty (α ×ₗ β ≃o γ ×ₗ β) := by
@@ -354,8 +357,6 @@ lemma initial_in_finite_prod_initial_base_case : ∀ (α : Type u) (β : Type v)
   (Lex (Fin (Nat.zero + 1) × α) ≼i Lex (Fin (Nat.zero + 1) × β) → Nonempty (α ≼i β)) := by
   intros α β _ _ initial
   simp at initial
-  have : 0 + 1 = 1 := by simp
-  rw [this] at initial
   rcases (times_one (α := α)) with ⟨times_a⟩
   rcases (times_one (α := β)) with ⟨times_b⟩
   have := initial_swap_left initial times_a.symm
@@ -373,7 +374,7 @@ Lex (Fin (Nat.succ x + 1) × α) ≼i Lex (Fin (Nat.succ x + 1) × β) → Nonem
   rcases distribute (α := Fin (x+1)) (β := Fin 1) (γ := α) with ⟨iso2⟩
   have iso := iso.trans iso2
   rcases times_one (α := α) with ⟨iso2⟩
-  have iso2 := swap_right iso2 (α := (Fin (x + 1) ×ₗ α))
+  have iso2 := change_right iso2 (α := (Fin (x + 1) ×ₗ α))
   have iso := iso.trans iso2
   have new_init := initial_swap_left initial iso.symm
   apply initial_plus at new_init
@@ -385,7 +386,7 @@ Lex (Fin (Nat.succ x + 1) × α) ≼i Lex (Fin (Nat.succ x + 1) × β) → Nonem
   rcases distribute (α := Fin (x+1)) (β := Fin 1) (γ := β) with ⟨iso2⟩
   have iso := iso.trans iso2
   rcases times_one (α := β) with ⟨iso2⟩
-  have iso2 := swap_right iso2 (α := (Fin (x + 1) ×ₗ β))
+  have iso2 := change_right iso2 (α := (Fin (x + 1) ×ₗ β))
   have iso := iso.trans iso2
   have iso := eiso.trans iso
   have refined := sum_refinement iso
@@ -439,8 +440,6 @@ lemma final_in_finite_prod_final_base_case : ∀ (α : Type u) (β : Type v) [in
   (Lex (Fin (Nat.zero + 1) × α) ≼f Lex (Fin (Nat.zero + 1) × β) → Nonempty (α ≼f β)) := by
   intros α β _ _ final
   simp at final
-  have : 0 + 1 = 1 := by simp
-  rw [this] at final
   rcases (times_one (α := α)) with ⟨times_a⟩
   rcases (times_one (α := β)) with ⟨times_b⟩
   have := final_swap_left final times_a.symm
@@ -460,7 +459,7 @@ lemma final_in_finite_prod_final_induction_step (x : ℕ) (ih : ∀ (α : Type u
   rcases distribute (β := Fin (x+1)) (α := Fin 1) (γ := α) with ⟨iso2⟩
   have iso := iso.trans iso2
   rcases times_one (α := α) with ⟨iso2⟩
-  have iso2 := swap_left iso2 (β := (Fin (x + 1) ×ₗ α))
+  have iso2 := change_left iso2 (β := (Fin (x + 1) ×ₗ α))
   have iso := iso.trans iso2
   have new_final := final_swap_left final iso.symm
   apply final_plus at new_final
@@ -472,7 +471,7 @@ lemma final_in_finite_prod_final_induction_step (x : ℕ) (ih : ∀ (α : Type u
   rcases distribute (β := Fin (x+1)) (α := Fin 1) (γ := β) with ⟨iso2⟩
   have iso := iso.trans iso2
   rcases times_one (α := β) with ⟨iso2⟩
-  have iso2 := swap_left iso2 (β := (Fin (x + 1) ×ₗ β))
+  have iso2 := change_left iso2 (β := (Fin (x + 1) ×ₗ β))
   have iso := iso.trans iso2
   have iso := eiso.trans iso
   have refined := sum_refinement iso
