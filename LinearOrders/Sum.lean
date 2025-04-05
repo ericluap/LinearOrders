@@ -50,18 +50,22 @@ theorem inl_le_inr {a : α} {b : β} : inl a ≤ inr b := by unfold inl inr; sim
 @[simp]
 theorem inl_lt_inr {a : α} {b : β} : inl a < inr b := by unfold inl inr; simp
 
+omit [LinearOrder α] [LinearOrder β] [LinearOrder γ] in
 @[simp]
 theorem elim_sum_inl (f : α → γ) (g : β → γ) (x : α) :
   Sum.elim f g (Sum.inlₗ x) = f x := rfl
 
+omit [LinearOrder α] [LinearOrder β] [LinearOrder γ] in
 @[simp]
 theorem elim_sum_inr (f : α → γ) (g : β → γ) (x : β) :
   Sum.elim f g (Sum.inrₗ x) = g x := rfl
 
+omit [LinearOrder γ] in
 @[simp]
 theorem elim_inl (f : α → γ) (g : β → γ) (x : α) :
   Sum.elim f g (inl x) = f x := rfl
 
+omit [LinearOrder γ] in
 @[simp]
 theorem elim_inr (f : α → γ) (g : β → γ) (x : β) :
   Sum.elim f g (inr x) = g x := rfl
@@ -69,8 +73,10 @@ theorem elim_inr (f : α → γ) (g : β → γ) (x : β) :
 abbrev Sum.mapₗ (f : α → α') (g : β → β') (x : α ⊕ₗ β) :=
   toLex (Sum.map f g x)
 
+omit [LinearOrder α] [LinearOrder β] [LinearOrder α'] [LinearOrder β'] in
 @[simp] theorem map_sum_inl (f : α → α') (g : β → β') (x : α) : Sum.mapₗ f g (Sum.inlₗ x) = Sum.inlₗ (f x) := rfl
 
+omit [LinearOrder α] [LinearOrder β] [LinearOrder α'] [LinearOrder β'] in
 @[simp] theorem map_sum_inr (f : α → α') (g : β → β') (x : β) : Sum.mapₗ f g (Sum.inrₗ x) = Sum.inrₗ (g x) := rfl
 
 @[simp] theorem map_inl (f : α → α') (g : β → β') (x : α) : Sum.mapₗ f g (inl x) = inl (f x) := rfl
@@ -100,7 +106,7 @@ theorem map_ord_preserving (f : α ↪o α') (g : β ↪o β') :
 
 def map (f : α ↪o α') (g : β ↪o β') : α ⊕ₗ β ↪o α' ⊕ₗ β' where
   toFun := Sum.mapₗ f g
-  inj' := Function.Injective.sum_map f.inj' g.inj'
+  inj' := Function.Injective.sumMap f.inj' g.inj'
   map_rel_iff' := map_ord_preserving f g
 
 @[simp] theorem map_apply_inl (f : α ↪o α') (g : β ↪o β') (x : α) : (inl x).map f g = inl (f x) := rfl
@@ -525,7 +531,7 @@ def initial_inside_sum_compl_iso {a b : Set α}
 
 theorem sum_refinement
   (f : α ⊕ₗ β ≃o γ ⊕ₗ δ)
-: ∃e : Type (max w x), ∃s : LinearOrder e,
+: ∃e : Type (max w x), ∃_ : LinearOrder e,
   (Nonempty (γ ⊕ₗ e ≃o α) ∧ Nonempty (e ⊕ₗ β ≃o δ)) ∨
   (Nonempty (α ⊕ₗ e ≃o γ) ∧ Nonempty (e ⊕ₗ δ ≃o β)) := by
   have := image_image_initial left_part (image_left f) left_initial (image_left_initial f)
@@ -568,7 +574,7 @@ theorem sum_refinement
     use second_part
 
 theorem initial_plus (f : α ≼i β) :
-∃e : Type v, ∃s : LinearOrder e, Nonempty (α ⊕ₗ e ≃o β) := by
+∃e : Type v, ∃_ : LinearOrder e, Nonempty (α ⊕ₗ e ≃o β) := by
   use ↑(f '' univ)ᶜ, Subtype.instLinearOrder (f '' univ)ᶜ
   have := image_of_univ_initial f
   have iso := initial_plus_initial_compl this
@@ -578,7 +584,7 @@ theorem initial_plus (f : α ≼i β) :
   use iso
 
 theorem final_plus (f : α ≼f β) :
-∃e : Type v, ∃s : LinearOrder e, Nonempty (e ⊕ₗ α ≃o β) := by
+∃e : Type v, ∃_ : LinearOrder e, Nonempty (e ⊕ₗ α ≃o β) := by
   use ↑(f '' univ)ᶜ, Subtype.instLinearOrder (f '' univ)ᶜ
   have := image_of_univ_final f
   have iso := final_compl_plus_final this

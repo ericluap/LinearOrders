@@ -1,7 +1,4 @@
-import Mathlib.Order.Hom.Basic
-import Mathlib.Order.InitialSeg
-import Mathlib.Data.Finset.Basic
-import Mathlib.Data.Set.Subset
+import Mathlib
 
 noncomputable section
 open Classical
@@ -45,7 +42,7 @@ def FinalSeg.trans (f : r ≼f' s) (g : s ≼f' t) : r ≼f' t :=
     rcases f.2 _ _ h with ⟨a', rfl⟩; exact ⟨a', rfl⟩⟩
 
 abbrev OrderInitialSeg (α β : Type*) [LinearOrder α] [LinearOrder β] :=
-  @LE.le α _ ≼i @LE.le β _
+  InitialSeg (@LE.le α _) (@LE.le β _)
 infixl:25 " ≼i " => OrderInitialSeg
 
 abbrev OrderFinalSeg (α β : Type*) [LinearOrder α] [LinearOrder β] :=
@@ -298,6 +295,7 @@ theorem image_of_univ_final : isFinal (g '' univ) := by
   unfold isFinal
   simp
 
+omit [LinearOrder α] in
 theorem univ_minus_eq_comp {a : Set α} : univ \ a = aᶜ := by
   rw [diff_eq, univ_inter]
 
@@ -365,6 +363,7 @@ theorem compl_le_final {a : Set α} (ha : isFinal a) :
 /-
 The union of initial segments is an initial segment
 -/
+omit [LinearOrder α] in
 theorem union_initial_initial [LinearOrder α]
   (f : ℕ → Set α) (hf : ∀ n : ℕ, isInitial (f n)) : isInitial (⋃ n, f n) := by
   unfold isInitial

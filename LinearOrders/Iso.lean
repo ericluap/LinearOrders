@@ -55,7 +55,7 @@ def iso_to_image (f : α ↪o β) (a : Set α) :
 
 def univ_iso_type : α ≃o (univ : Set α) := OrderIso.ofSurjective
     ⟨⟨fun x => ⟨OrderEmbedding.id α x, by simp⟩, by simp [Function.Injective]⟩, by simp⟩
-    (by simp [Function.Surjective])
+    (by simp [Function.Surjective, OrderEmbedding.id])
 
 
 def type_iso_image (f : α ↪o β) : α ≃o f '' univ := univ_iso_type.trans (iso_to_image f univ)
@@ -75,6 +75,7 @@ def equal_iso {a b : Set α} (eq : a = b) :
   right_inv := by simp [Function.RightInverse, Function.LeftInverse]
   map_rel_iff' := by simp
 
+omit [LinearOrder α] [LinearOrder β] in
 theorem swap_equal_left {a b : Set α} (eq : a = b) :
   (a ⊕ₗ β) = (b ⊕ₗ β) := by
   rw [eq]

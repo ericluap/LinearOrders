@@ -8,7 +8,6 @@ universe u v w
 variable {α : Type u} {β : Type v} {γ : Type w}
   [LinearOrder α] [LinearOrder β] [LinearOrder γ]
 
-@[simps (config := .asFn)]
 def id (α : Type*) [LinearOrder α] : α ↪o α where
   toFun x := x
   inj' := by unfold Function.Injective; simp;

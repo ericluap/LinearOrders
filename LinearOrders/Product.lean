@@ -353,7 +353,7 @@ theorem fin_dual {n : ℕ}: Nonempty ((Fin (n+1)) ≃o (Fin (n+1))ᵒᵈ) := by
     #check Int.modEq_iff_add_fac.mp hxy
     #check Int.natMod_eq-/
 
-lemma initial_in_finite_prod_initial_base_case : ∀ (α : Type u) (β : Type v) [inst : LinearOrder α] [inst_1 : LinearOrder β],
+lemma initial_in_finite_prod_initial_base_case : ∀ (α : Type u) (β : Type v) [LinearOrder α] [LinearOrder β],
   (Lex (Fin (Nat.zero + 1) × α) ≼i Lex (Fin (Nat.zero + 1) × β) → Nonempty (α ≼i β)) := by
   intros α β _ _ initial
   simp at initial
@@ -364,7 +364,7 @@ lemma initial_in_finite_prod_initial_base_case : ∀ (α : Type u) (β : Type v)
   apply nonempty_of_exists
   use this
 
-lemma initial_in_finite_prod_initial_induction_step (x : ℕ) (ih : ∀ (α : Type u) (β : Type v) [inst : LinearOrder α] [inst_1 : LinearOrder β],
+lemma initial_in_finite_prod_initial_induction_step (x : ℕ) (ih : ∀ (α : Type u) (β : Type v) [LinearOrder α] [ LinearOrder β],
   (Lex (Fin (x + 1) × α) ≼i Lex (Fin (x + 1) × β) → Nonempty (α ≼i β)) ∧
     (Lex (Fin (x + 1) × β) ≼i Lex (Fin (x + 1) × α) → Nonempty (β ≼i α))) :
 Lex (Fin (Nat.succ x + 1) × α) ≼i Lex (Fin (Nat.succ x + 1) × β) → Nonempty (α ≼i β) := by
@@ -436,7 +436,7 @@ theorem initial_in_finite_prod_initial : ∀n : Nat,
   rcases initial_in_finite_prod_initial' n α β with ⟨initial, _ ⟩
   trivial
 
-lemma final_in_finite_prod_final_base_case : ∀ (α : Type u) (β : Type v) [inst : LinearOrder α] [inst_1 : LinearOrder β],
+lemma final_in_finite_prod_final_base_case : ∀ (α : Type u) (β : Type v) [LinearOrder α] [LinearOrder β],
   (Lex (Fin (Nat.zero + 1) × α) ≼f Lex (Fin (Nat.zero + 1) × β) → Nonempty (α ≼f β)) := by
   intros α β _ _ final
   simp at final
@@ -447,7 +447,7 @@ lemma final_in_finite_prod_final_base_case : ∀ (α : Type u) (β : Type v) [in
   apply nonempty_of_exists
   use this
 
-lemma final_in_finite_prod_final_induction_step (x : ℕ) (ih : ∀ (α : Type u) (β : Type v) [inst : LinearOrder α] [inst_1 : LinearOrder β],
+lemma final_in_finite_prod_final_induction_step (x : ℕ) (ih : ∀ (α : Type u) (β : Type v) [LinearOrder α] [LinearOrder β],
   (Lex (Fin (x + 1) × α) ≼f Lex (Fin (x + 1) × β) → Nonempty (α ≼f β)) ∧
     (Lex (Fin (x + 1) × β) ≼f Lex (Fin (x + 1) × α) → Nonempty (β ≼f α))) :
   (Lex (Fin (Nat.succ x + 1) × α) ≼f Lex (Fin (Nat.succ x + 1) × β) → Nonempty (α ≼f β)) := by
