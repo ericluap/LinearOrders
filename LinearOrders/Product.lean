@@ -327,7 +327,7 @@ theorem fin_sum : ∀{n m : Nat}, Nonempty (Fin (n+m) ≃o (Fin n) ⊕ₗ (Fin m
           simp at hxy
           trivial
   rcases make_iso qinj qsurj qord with ⟨iso⟩
-  apply nonempty_of_exists
+  apply Exists.nonempty
   use iso.symm
 
 /-
@@ -361,7 +361,7 @@ lemma initial_in_finite_prod_initial_base_case : ∀ (α : Type u) (β : Type v)
   rcases (times_one (α := β)) with ⟨times_b⟩
   have := initial_swap_left initial times_a.symm
   have := initial_swap_right this times_b
-  apply nonempty_of_exists
+  apply Exists.nonempty
   use this
 
 lemma initial_in_finite_prod_initial_induction_step (x : ℕ) (ih : ∀ (α : Type u) (β : Type v) [LinearOrder α] [ LinearOrder β],
@@ -399,7 +399,7 @@ Lex (Fin (Nat.succ x + 1) × α) ≼i Lex (Fin (Nat.succ x + 1) × β) → Nonem
   have : β ≼i α ⊕ₗ e := initial_initial_sum binit
   rcases lindenbaum this final with ⟨iso⟩
   have := plus_initial iso.symm
-  apply nonempty_of_exists
+  apply Exists.nonempty
   use this
   have := plus_initial fst_iso
   rcases ih α β with ⟨ih', _⟩
@@ -444,7 +444,7 @@ lemma final_in_finite_prod_final_base_case : ∀ (α : Type u) (β : Type v) [Li
   rcases (times_one (α := β)) with ⟨times_b⟩
   have := final_swap_left final times_a.symm
   have := final_swap_right this times_b
-  apply nonempty_of_exists
+  apply Exists.nonempty
   use this
 
 lemma final_in_finite_prod_final_induction_step (x : ℕ) (ih : ∀ (α : Type u) (β : Type v) [LinearOrder α] [LinearOrder β],
@@ -488,7 +488,7 @@ lemma final_in_finite_prod_final_induction_step (x : ℕ) (ih : ∀ (α : Type u
   have : e ⊕ₗ α ≼i β := plus_initial fst_iso
   rcases lindenbaum this final with ⟨iso⟩
   have := plus_final iso
-  apply nonempty_of_exists
+  apply Exists.nonempty
   use this
 
 theorem final_in_finite_prod_final' : ∀n : Nat,

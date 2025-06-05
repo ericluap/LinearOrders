@@ -552,7 +552,7 @@ theorem sum_refinement
       have := swap_right (right_iso_image_right f).symm this
       rw [left_compl_right] at this
       exact this.trans right_part_iso.symm
-    constructor <;> apply nonempty_of_exists
+    constructor <;> apply Exists.nonempty
     use first_part
     use second_part
   · set e := left_part \ (image_left f) with e_def
@@ -569,7 +569,7 @@ theorem sum_refinement
       rw [←e_def, image_left_compl_image_right f, left_compl_right] at iso
       have iso := iso.trans (right_iso_image_right f).symm
       exact swap_right (right_part_iso).symm iso
-    constructor <;> apply nonempty_of_exists
+    constructor <;> apply Exists.nonempty
     use first_part
     use second_part
 
@@ -580,7 +580,7 @@ theorem initial_plus (f : α ≼i β) :
   have iso := initial_plus_initial_compl this
   have iso2 := type_iso_image f.toRelEmbedding
   have iso := swap_left iso2.symm iso
-  apply nonempty_of_exists
+  apply Exists.nonempty
   use iso
 
 theorem final_plus (f : α ≼f β) :
@@ -590,7 +590,7 @@ theorem final_plus (f : α ≼f β) :
   have iso := final_compl_plus_final this
   have iso2 := type_iso_image f.toRelEmbedding
   have iso := swap_right iso2.symm iso
-  apply nonempty_of_exists
+  apply Exists.nonempty
   use iso
 
 def plus_initial (f : α ⊕ₗ β ≃o γ) : α ≼i γ where

@@ -336,7 +336,7 @@ theorem lindenbaum {α : Type u} {β : Type v}
       · intros a b
         simp
       · trivial
-    apply nonempty_of_exists
+    apply Exists.nonempty
     use orderbij
   set h := sbFun f g with h_def
   have h_bij : Function.Bijective h := ⟨sb_injective f g f.inj', sb_surjective f g g.inj'⟩
@@ -347,5 +347,5 @@ theorem lindenbaum {α : Type u} {β : Type v}
   have : q = h := by
     simp [q_def, h_def]
   have orderbij : α ≃o β := RelIso.mk q (order_preserving f g q this)
-  apply nonempty_of_exists
+  apply Exists.nonempty
   use orderbij

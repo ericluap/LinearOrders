@@ -32,20 +32,20 @@ theorem make_iso {f : α → β} (hinj : Function.Injective f) (hsurj : Function
     simp [g_def]
     exact hord
   have orderbij : α ≃o β := ⟨g, gord⟩
-  apply nonempty_of_exists
+  apply Exists.nonempty
   use orderbij
 
 theorem nonempty_nonempty_iso_trans : Nonempty (α ≃o β) -> Nonempty (β ≃o γ) -> Nonempty (α ≃o γ) := by
   intros x y
   rcases x with ⟨x⟩
   rcases y with ⟨y⟩
-  apply nonempty_of_exists
+  apply Exists.nonempty
   use (x.trans y)
 
 theorem nonempty_iso_trans : Nonempty (α ≃o β) -> β ≃o γ -> Nonempty (α ≃o γ) := by
   intros x y
   rcases x with ⟨x⟩
-  apply nonempty_of_exists
+  apply Exists.nonempty
   use (x.trans y)
 
 def iso_to_image (f : α ↪o β) (a : Set α) :
